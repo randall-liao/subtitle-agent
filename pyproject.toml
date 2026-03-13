@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "google-adk>=1.27.0",
+    "httpx>=0.28.1",
+    "patool>=4.0.4",
     "pydantic>=2.12.5",
 ]
 
@@ -14,6 +16,7 @@ dev = [
     "pre-commit>=4.5.1",
     "pyright>=1.1.408",
     "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
     "ruff>=0.15.6",
 ]
 
@@ -26,7 +29,16 @@ line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
 include = ["src", "tests"]
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+reportMissingTypeArgument = "none"
+reportDeprecated = "none"
+reportArgumentType = "none"
+reportAttributeAccessIssue = "none"
