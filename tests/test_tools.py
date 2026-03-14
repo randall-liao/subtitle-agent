@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from subtitle_agent.tools import (
+    calculate_file_hash,
     find_video_files,
     safe_copy_and_rename_subtitle,
 )
@@ -26,6 +27,11 @@ def test_find_video_files(tmp_path: Path):
     assert any("movie2.mp4" in v for v in videos)
     assert any("episode1.avi" in v for v in videos)
     assert not any("document.txt" in v for v in videos)
+
+
+def test_find_video_files_no_extensions():
+    with pytest.raises(ValueError, match="Please provide a list of video extensions"):
+        find_video_files("/tmp", [])
 
 
 def test_safe_copy_and_rename_subtitle(tmp_path: Path):
@@ -66,3 +72,25 @@ def test_safe_copy_and_rename_subtitle(tmp_path: Path):
             new_name="movie.mkv",
             allowed_base_dir=str(tmp_path),
         )
+
+
+def test_calculate_file_hash(tmp_path: Path):
+    # Create a small test file
+    test_file = tmp_path / "test_video.mkv"
+    test_content = b"test video content for hashing"
+    test_file.write_bytes(test_content)
+
+    # Calculate hash
+    file_hash = calculate_file_hash(str(test_file))
+    assert isinstance(file_hash, str)
+    assert len(file_hash) == 32  # MD5 hash length
+
+    # Same content should produce same hash
+    file_hash2 = calculate_file_hash(str(test_file))
+    assert file_hash == file_hash2
+
+
+def test_calculate_file_hash_not_found(tmp_path: Path):
+    non_existent = tmp_path / "non_existent.mkv"
+    with pytest.raises(FileNotFoundError):
+        calculate_file_hash(str(non_existent))
