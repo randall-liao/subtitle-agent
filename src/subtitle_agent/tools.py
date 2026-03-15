@@ -1,4 +1,5 @@
 # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType, reportUnknownArgumentType, reportUnknownParameterType, reportAny]
+import hashlib
 import shutil
 import tempfile
 from pathlib import Path
@@ -53,50 +54,133 @@ def safe_copy_and_rename_subtitle(
     return True
 
 
-def download_and_extract_subtitle(url: str) -> list[str]:
-    """Downloads a subtitle archive from the given URL and extracts it, returning valid subtitle paths."""
-    # assrt requires User-Agent if they restrict, but let's try basic httpx
-    # Need to handle rar or zip
-    temp_dir = Path(tempfile.mkdtemp(prefix="subtitle_dl_"))
+def calculate_file_hash(file_path: str) -> str:
+    """Calculate the hash of a file for OpenSubtitles API."""
+    path = Path(file_path)
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError(f"File {file_path} does not exist.")
 
-    headers = {"User-Agent": "Mozilla/5.0"}
-    with httpx.Client(follow_redirects=True, headers=headers) as client:
-        resp = client.get(url)
-        resp.raise_for_status()
+    # OpenSubtitles uses a specific hash algorithm (first and last 64KB)
+    file_size = path.stat().st_size
+    if file_size < 128 * 1024:
+        # File too small, just hash entire file
+        with open(path, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()
 
-        # Determine extension from Content-Disposition or url
-        cd = resp.headers.get("Content-Disposition", "")
-        suffix = ".rar" if "rar" in cd.lower() or ".rar" in url.lower() else ".zip"
+    chunk_size = 64 * 1024
+    with open(path, "rb") as f:
+        head = f.read(chunk_size)
+        f.seek(-chunk_size, 2)
+        tail = f.read(chunk_size)
 
-        archive_path = temp_dir / f"downloaded_archive{suffix}"
-        with open(archive_path, "wb") as f:
-            f.write(resp.content)
+    combined = head + tail
+    return hashlib.md5(combined).hexdigest()
 
-    # Use patool or shutil to extract
-    extract_dir = temp_dir / "extracted"
-    extract_dir.mkdir()
 
-    # Find extracted subtitles
-    sub_exts = {".srt", ".ass", ".ssa", ".vtt"}
-    subs = []
+def search_subtitles(
+    query: str | None = None,
+    imdb_id: str | None = None,
+    file_hash: str | None = None,
+    languages: str = "en",
+) -> list[dict]:
+    """Search for subtitles on OpenSubtitles REST API.
+
+    Args:
+        query: Search query (movie/show name)
+        imdb_id: IMDB ID (e.g., 'tt1234567')
+        file_hash: File hash for hash-based search
+        languages: Language code (e.g., 'en', 'zh')
+
+    Returns:
+        List of subtitle results with file_id, name, language, etc.
+    """
+    api_url = "https://api.opensubtitles.com/api/v1/subtitles"
+    headers = {
+        "Accept": "application/json",
+        "Api-Key": "",  # Optional for basic search
+    }
+
+    params: dict[str, str] = {"languages": languages}
+
+    if query:
+        params["query"] = query
+    if imdb_id:
+        params["moviehash"] = imdb_id
+    if file_hash:
+        params["moviehash"] = file_hash
 
     try:
-        import patoolib  # type: ignore
+        with httpx.Client(follow_redirects=True) as client:
+            response = client.get(api_url, headers=headers, params=params, timeout=30.0)
+            response.raise_for_status()
+            data = response.json()
 
-        patoolib.extract_archive(str(archive_path), outdir=str(extract_dir))
-    except Exception as e:
-        # Fallback to shutil
-        try:
-            shutil.unpack_archive(str(archive_path), extract_dir)
-        except shutil.ReadError:
-            # Maybe it is a subtitle already natively downloaded as text
-            if "srt" in cd.lower() or "ass" in cd.lower():
-                return [str(archive_path)]
-            print(f"Extraction failed: {e}")
-            return []
+            results = []
+            for item in data.get("data", []):
+                attributes = item.get("attributes", {})
+                files = attributes.get("files", [])
+                if files:
+                    results.append(
+                        {
+                            "file_id": files[0].get("file_id"),
+                            "file_name": files[0].get("file_name", "unknown"),
+                            "name": attributes.get("release", "Unknown"),
+                            "language": attributes.get("language", "unknown"),
+                            "score": attributes.get("score", 0),
+                        }
+                    )
+            return results
+    except httpx.HTTPError as e:
+        return [{"error": f"Search failed: {e}"}]
 
-    for path in extract_dir.rglob("*"):
-        if path.is_file() and path.suffix.lower() in sub_exts:
-            subs.append(str(path))
 
-    return subs
+def download_subtitle(file_id: str, dest_dir: str | None = None) -> str:
+    """Download a subtitle from OpenSubtitles by file_id.
+
+    Args:
+        file_id: The file ID from search_subtitles results
+        dest_dir: Optional destination directory (defaults to temp dir)
+
+    Returns:
+        Path to the downloaded subtitle file
+    """
+    api_url = "https://api.opensubtitles.com/api/v1/download"
+    headers = {
+        "Accept": "application/json",
+        "Api-Key": "",  # Optional for basic download
+    }
+
+    try:
+        with httpx.Client(follow_redirects=True) as client:
+            # First get the download link
+            response = client.post(
+                api_url,
+                headers=headers,
+                json={"file_id": file_id},
+                timeout=30.0,
+            )
+            response.raise_for_status()
+            data = response.json()
+            download_link = data.get("link")
+
+            if not download_link:
+                return "Error: No download link received"
+
+            # Download the actual subtitle file
+            sub_response = client.get(download_link, headers=headers, timeout=30.0)
+            sub_response.raise_for_status()
+
+            # Determine destination
+            if dest_dir:
+                dest_path = Path(dest_dir) / f"subtitle_{file_id}.srt"
+            else:
+                temp_dir = Path(tempfile.mkdtemp(prefix="subtitle_dl_"))
+                dest_path = temp_dir / f"subtitle_{file_id}.srt"
+
+            # Write subtitle content
+            content = sub_response.text
+            dest_path.write_text(content, encoding="utf-8")
+
+            return str(dest_path)
+    except httpx.HTTPError as e:
+        return f"Error: Download failed: {e}"
