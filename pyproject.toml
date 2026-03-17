@@ -1,14 +1,14 @@
 [project]
 name = "subtitle-agent"
 version = "0.1.0"
-description = "An automated agent powered by Gemini and OpenSubtitles to find and organize subtitles"
+description = "A CLI toolset to find and download subtitles from OpenSubtitles and search TMDB."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "google-adk>=1.27.0",
     "httpx>=0.28.1",
     "patool>=4.0.4",
     "pydantic>=2.12.5",
+    "chardet>=5.2.0",
 ]
 
 [build-system]

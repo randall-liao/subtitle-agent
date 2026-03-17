@@ -1,19 +1,20 @@
 #! python3
 # Credit: @GitHub: illegalbyte `https://github.com/illegalbyte/TMDB_CLI/tree/main`
 
-from pathlib import Path
-import json
-import requests
-import pyinputplus as pyip
-from colorama import Fore, Style
 import argparse
+import json
 import os
 import time
+from pathlib import Path
+from pprint import pprint
+
+import pyinputplus as pyip
+import requests
+from colorama import Fore, Style
 from pygments import highlight
 from pygments.formatters.terminal256 import Terminal256Formatter
 from pygments.lexers.web import JsonLexer
 from pygments.styles import get_style_by_name
-from pprint import pprint
 
 # TMDB IDs: [tv, movie] (for testing purposes)
 TMDB_IDs = ["113036", "676691"]
@@ -172,7 +173,7 @@ def read_file_lines(filePath):
     dir_path(filePath)
 
     # Open the file and return each line in a list
-    with open(filePath, "r") as file:
+    with open(filePath) as file:
         lines = file.readlines()
     return lines
 
@@ -196,9 +197,8 @@ class TMDB:
                 )
                 break
         # Write the API key to 'init' file
-        initFile = open("init.py", "w")
-        initFile.write(f"API_KEY='{apiKeyInput}'")
-        initFile.close()
+        with open("init.py", "w") as initFile:
+            initFile.write(f"API_KEY='{apiKeyInput}'")
 
     # Get Movie Details
     def Movie(TMDB_ID: str, j=False) -> dict:
@@ -206,7 +206,7 @@ class TMDB:
         response = requests.get(url)
         response.raise_for_status()
         # Return JSON if JSON parameter is passed
-        if j == True:
+        if j:
             return response.text
         # Create Dictionary of Movie Data:
         movieDict = json.loads(response.text)
@@ -250,7 +250,7 @@ class TMDB:
         response = requests.get(url)
         response.raise_for_status()
         # Return JSON if JSON parameter is passed
-        if j == True:
+        if j:
             return response.text
         # Create Dictionary of TV Data:
         tvDict = json.loads(response.text)
@@ -299,13 +299,13 @@ class TMDB:
     # eg translate country name to country code
 
     def justwatch(TMDB_ID: str, movie=False, tv=False, country="AU") -> dict:
-        if movie == True:
+        if movie:
             url = f"https://api.themoviedb.org/3/movie/{TMDB_ID}/watch/providers?api_key={API_KEY}"
             response = requests.get(url)
             response.raise_for_status()
             providers_dict = json.loads(response.text)
             pprint(providers_dict)
-        elif tv == True:
+        elif tv:
             url = f"https://api.themoviedb.org/3/tv/{TMDB_ID}/watch/providers?api_key={API_KEY}"
             response = requests.get(url)
             response.raise_for_status()
@@ -321,7 +321,7 @@ if __name__ == "__main__":
         from init import API_KEY
 
     # MOVIE OUTPUT [Args: -m / --movie]
-    if args.movie != None:
+    if args.movie is not None:
         if args.imdbid:
             args.movie = TMDB.IMDB_CONVERTER(args.movie)
         if args.list:
@@ -351,7 +351,7 @@ if __name__ == "__main__":
                 print(f"{GREEN}TRAILER:{RS} {movieDict['trailer']}")
 
     # TV OUTPUT [Args: -tv / --television]
-    if args.television != None:
+    if args.television is not None:
         if args.imdbid:
             args.television = TMDB.IMDB_CONVERTER(args.television)
 
@@ -378,7 +378,7 @@ if __name__ == "__main__":
             print(f"{GREEN}Spoken Language(s):{RS} {' | '.join(tvDict['languages'])}")
 
     # CONVERTS IMDB ID TO TMDB ID [-idconvert / --imdbidconvert]
-    if args.imdbidconvert != None:
+    if args.imdbidconvert is not None:
         print(TMDB.IMDB_CONVERTER(args.imdbidconvert))
 
     # GETS THE AVAILABLE STREAMING SERVICES FOR A SPECIFIED COUNTRY:
