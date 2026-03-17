@@ -1,25 +1,25 @@
-# Subtitle Agent 🎬
+# Subtitle Agent CLI 🎬
 
-An automated agent powered by Gemini and OpenSubtitles to find and organize subtitles for your media collection.
+A collection of CLI tools to find, download, and organize subtitles for your media collection using OpenSubtitles and TMDB.
 
 ## 🚀 Overview
 
-Subtitle Agent simplifies the process of finding subtitles for your videos. It recursively scans a directory for media files, uses Gemini's intelligence to determine search queries, searches OpenSubtitles via its REST API, and automatically downloads and renames the best matches to match your video filenames.
+Subtitle Agent CLI provides direct tools for subtitle management:
+- **`subdl_cli.py`**: A powerful tool to search and download subtitles from OpenSubtitles.org.
+- **`tmdb_cli.py`**: A tool to search for movie and TV show information on TMDB.
 
 ## ✨ Features
 
-- **Gemini Powered**: Uses LLM heuristics to identify video files and formulate accurate search queries.
-- **OpenSubtitles REST API**: Direct integration with OpenSubtitles API for subtitle search and download.
-- **Recursive Scanning**: Finds media files across nested directories.
-- **Model Selection**: Choose from available Gemini models for the task.
-- **Safe Operations**: Copies and renames subtitles without modifying your original video files.
-- **Hash-Based Search**: Supports file hash calculation for accurate subtitle matching.
+- **OpenSubtitles Integration**: Search subtitles by file hash, IMDB ID, or search string.
+- **TMDB Search**: Quickly find movie metadata and IMDB IDs.
+- **Support for Many Languages**: Search in multiple languages simultaneously.
+- **Customizable Output**: Format downloaded subtitle filenames to match your preferences.
 
 ## 📋 Prerequisites
 
 - **Python**: `>= 3.14`
 - **Package Manager**: [uv](https://github.com/astral-sh/uv)
-- **API Key**: A valid [Gemini API Key](https://aistudio.google.com/).
+- **API Access**: An OpenSubtitles account (for `subdl_cli.py`) and a TMDB API key (if applicable for `tmdb_cli.py`).
 
 ## 🛠 Installation
 
@@ -31,37 +31,24 @@ Subtitle Agent simplifies the process of finding subtitles for your videos. It r
 
 2. Install dependencies using `uv`:
    ```bash
-   uv sync --all-extras --dev
+   uv sync
    ```
-
-## ⚙️ Configuration
-
-Set your Gemini API key as an environment variable:
-```bash
-export GEMINI_API_KEY="your-api-key-here"
-```
 
 ## 🚀 Usage
 
-Run the agent by specifying the target directory:
+### Subtitle Search and Download
 
+Run the subtitle CLI:
 ```bash
-uv run src/subtitle_agent/main.py --dir /path/to/your/videos
+uv run src/cli/subdl_cli.py --lang eng /path/to/your/video.mp4
 ```
 
-### Arguments:
-- `--dir`: (Required) Starting directory for subtitle search.
-- `--language`: (Optional) Desired subtitle language (e.g., `en`, `zh`). Default is `en`.
-- `--instructions`: (Optional) Custom instructions for subtitle selection.
+### TMDB Search
 
-Example with custom language and instructions:
+Run the TMDB CLI:
 ```bash
-uv run src/subtitle_agent/main.py --dir ./movies --language zh --instructions "prefer traditional Chinese"
+uv run src/cli/tmdb_cli.py --query "The Matrix"
 ```
-
-## 🤖 Development
-
-This project follows an **agent-native** development model. For contribution guidelines, repository structure, and development commands, please refer to [AGENTS.md](file:///home/devuser/projects/subtitle-agent/AGENTS.md).
 
 ## 📄 License
 

@@ -17,13 +17,15 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
 https://github.com/alexanderwink/subdl
 """
 
-import os, sys
-import struct
-import xmlrpc.client
-import io, gzip, base64
-import re
 import argparse
-import pdb
+import base64
+import gzip
+import io
+import os
+import re
+import struct
+import sys
+import xmlrpc.client
 
 OSDB_SERVER_URI = "https://api.opensubtitles.org/xml-rpc"
 xmlrpc_server = None
@@ -133,7 +135,7 @@ def writefile(filename, str):
         with open(filename, "wb") as f:
             f.write(str)
     except Exception as e:
-        fatal_error("Error writing to %s: %s" % (filename, e))
+        fatal_error(f"Error writing to {filename}: {e}")
 
 
 def query_num(s, low, high):
@@ -153,7 +155,7 @@ def query_num(s, low, high):
 def query_yn(s):
     while True:
         try:
-            r = input("%s [y/n] " % s).lower()
+            r = input(f"{s} [y/n] ").lower()
         except KeyboardInterrupt:
             fatal_error("Aborted by user")
         if r.startswith("y"):
@@ -189,16 +191,16 @@ def movie_hash(name):
     filesize = os.path.getsize(name)
     hash = filesize
     if filesize < 65536 * 2:
-        raise Exception("Error hashing %s: file too small" % (name))
+        raise Exception(f"Error hashing {name}: file too small")
     with open(name, "rb") as f:
-        for x in range(int(65536 / bytesize)):
+        for _x in range(int(65536 / bytesize)):
             hash += struct.unpack(longlongformat, f.read(bytesize))[0]
             hash &= 0xFFFFFFFFFFFFFFFF
         f.seek(filesize - 65536, 0)
-        for x in range(int(65536 / bytesize)):
+        for _x in range(int(65536 / bytesize)):
             hash += struct.unpack(longlongformat, f.read(bytesize))[0]
             hash &= 0xFFFFFFFFFFFFFFFF
-    return "%016x" % hash
+    return f"{hash:016x}"
 
 
 def SearchSubtitlesByHash(filename, langs_search):
@@ -213,11 +215,11 @@ def SearchSubtitlesByHash(filename, langs_search):
             }
         )
     ]
-    print("Searching for subtitles for moviehash=%s..." % (moviehash), file=sys.stderr)
+    print(f"Searching for subtitles for moviehash={moviehash}...", file=sys.stderr)
     try:
         results = xmlrpc_server.SearchSubtitles(osdb_token, searchlist)
     except Exception as e:
-        fatal_error("Error in XMLRPC SearchSubtitles call: %s" % e)
+        fatal_error(f"Error in XMLRPC SearchSubtitles call: {e}")
     data = results["data"]
     return data and [SubtitleSearchResult(d) for d in data]
 
@@ -226,22 +228,22 @@ def SearchSubtitlesByIMDBId(filename, langs_search, imdb_id):
     result = re.search("\d+", imdb_id)
     imdb_id = result.group(0)
     searchlist = [({"sublanguageid": langs_search, "imdbid": imdb_id})]
-    print("Searching for subtitles for IMDB id=%s..." % (imdb_id), file=sys.stderr)
+    print(f"Searching for subtitles for IMDB id={imdb_id}...", file=sys.stderr)
     try:
         results = xmlrpc_server.SearchSubtitles(osdb_token, searchlist)
     except Exception as e:
-        fatal_error("Error in XMLRPC SearchSubtitles call: %s" % e)
+        fatal_error(f"Error in XMLRPC SearchSubtitles call: {e}")
     data = results["data"]
     return data and [SubtitleSearchResult(d) for d in data]
 
 
 def SearchSubtitlesByString(str, langs_search):
     searchlist = [({"sublanguageid": langs_search, "query": str})]
-    print("Searching for subtitles for query=%s..." % (str), file=sys.stderr)
+    print(f"Searching for subtitles for query={str}...", file=sys.stderr)
     try:
         results = xmlrpc_server.SearchSubtitles(osdb_token, searchlist)
     except Exception as e:
-        fatal_error("Error in XMLRPC SearchSubtitles call: %s" % e)
+        fatal_error(f"Error in XMLRPC SearchSubtitles call: {e}")
     data = results["data"]
     return data and [SubtitleSearchResult(d) for d in data]
 
@@ -250,7 +252,7 @@ def format_movie_name(s):
     if s.startswith('"') and s.endswith('"'):
         s = s[1:-1]
     s = s.replace('"', "'")
-    return '"%s"' % s
+    return f'"{s}"'
 
 
 def DisplaySubtitleSearchResults(search_results, file):
@@ -281,35 +283,27 @@ def DisplaySubtitleSearchResults(search_results, file):
         # idmovie = subtitle.IDMovie
         # idmovieimdb = subtitle.IDMovieImdb
         if options.download == "query":
-            print("%s." % repr(n).rjust(count_maxlen), end=" ")
+            print(f"{repr(n).rjust(count_maxlen)}.", end=" ")
         print(
-            "#%s [%s] [Rat:%s DL:%s] %s %s "
-            % (
-                idsubtitle.rjust(idsubtitle_maxlen),
-                lang,
-                rating.rjust(4),
-                downloads.rjust(downloads_maxlen),
-                moviename.ljust(moviename_maxlen),
-                filename,
-            )
+            f"#{idsubtitle.rjust(idsubtitle_maxlen)} [{lang}] [Rat:{rating.rjust(4)} DL:{downloads.rjust(downloads_maxlen)}] {moviename.ljust(moviename_maxlen)} {filename} "
         )
 
 
 def DisplaySelectedSubtitle(selected_file):
-    print("#{0.IDSubtitleFile} {0.SubFileName}".format(selected_file))
+    print(f"#{selected_file.IDSubtitleFile} {selected_file.SubFileName}")
 
 
 def DownloadSubtitle(sub_id):
     """Download subtitle #sub_id and return subtitle text as string."""
     try:
         answer = xmlrpc_server.DownloadSubtitles(osdb_token, [sub_id])
-        if answer.get("data") == False:
+        if not answer.get("data"):
             print("\n  ------\n  ERROR: ", answer.get("status"), "\n  ------\n")
             os._exit()
         else:
             subtitle_compressed = answer["data"][0]["data"]
     except Exception as e:
-        fatal_error("Error in XMLRPC DownloadSubtitles call: %s" % e)
+        fatal_error(f"Error in XMLRPC DownloadSubtitles call: {e}")
     return gunzipstr(base64.b64decode(subtitle_compressed))
 
 
@@ -317,23 +311,22 @@ def DownloadAndSaveSubtitle(sub_id, destfilename):
     if os.path.exists(destfilename):
         if options.existing == "abort":
             fatal_error(
-                "Subtitle %s already exists; aborting (try --interactive)."
-                % destfilename,
+                f"Subtitle {destfilename} already exists; aborting (try --interactive).",
                 code=3,
             )
         elif options.existing == "bypass":
-            print("Subtitle %s already exists; bypassing." % destfilename)
+            print(f"Subtitle {destfilename} already exists; bypassing.")
             return
         elif options.existing == "overwrite":
-            print("Subtitle %s already exists; overwriting." % destfilename)
+            print(f"Subtitle {destfilename} already exists; overwriting.")
         elif options.existing == "query":
-            if query_yn("Subtitle %s already exists. Overwrite?" % destfilename):
+            if query_yn(f"Subtitle {destfilename} already exists. Overwrite?"):
                 pass
             else:
                 fatal_error("File not overwritten.")
         else:
-            raise Exception("internal error: bad option.existing=%s" % options.existing)
-    print("Downloading #%s to %s..." % (sub_id, destfilename), file=sys.stderr, end=" ")
+            raise Exception(f"internal error: bad option.existing={options.existing}")
+    print(f"Downloading #{sub_id} to {destfilename}...", file=sys.stderr, end=" ")
     s = DownloadSubtitle(sub_id)
     if options.filter:
         s = filtersub(s)
@@ -341,7 +334,7 @@ def DownloadAndSaveSubtitle(sub_id, destfilename):
         import chardet
 
         result = chardet.detect(s)
-        if not result["encoding"] in {"ascii", "utf-8"}:
+        if result["encoding"] not in {"ascii", "utf-8"}:
             print(
                 f"Found encoding {result['encoding']} with a confidence of {result['confidence'] * 100:.2f}%. Converting to utf8."
             )
@@ -373,8 +366,7 @@ def AutoDownloadAndSave(videoname, search_result, downloaded=None):
     if downloaded is not None:
         if output_filename in downloaded:
             fatal_error(
-                "Already wrote to %s! Uniquify output filename format."
-                % output_filename
+                f"Already wrote to {output_filename}! Uniquify output filename format."
             )
         downloaded[output_filename] = 1
     DownloadAndSaveSubtitle(search_result.IDSubtitleFile, output_filename)
@@ -384,7 +376,7 @@ def select_search_result_by_id(id, search_results):
     for search_result in search_results:
         if search_result.IDSubtitleFile == id:
             return search_result
-    fatal_error("Search results did not contain subtitle with id %s" % id)
+    fatal_error(f"Search results did not contain subtitle with id {id}")
 
 
 def help():
@@ -394,7 +386,7 @@ def help():
 def isnumber(value):
     try:
         return int(value) > 0
-    except:
+    except ValueError, TypeError:
         return False
 
 
@@ -491,7 +483,7 @@ def parseargs(args):
         raise SystemExit
 
     if options.version:
-        print("%s %s" % (NAME, VERSION))
+        print(f"{NAME} {VERSION}")
         raise SystemExit
 
     if options.list_languages:
@@ -566,7 +558,7 @@ def main(args):
         file_name = file_base(os.path.basename(file))
 
         if not os.path.exists(file):
-            fatal_error("can't find file '%s'" % file)
+            fatal_error(f"can't find file '{file}'")
 
         if options.search:
             search_results = SearchSubtitlesByString(options.search, options.lang)
@@ -631,7 +623,7 @@ def main(args):
             search_result = select_search_result_by_id(options.download, search_results)
             AutoDownloadAndSave(file, search_result)
         else:
-            raise Exception("internal error: bad option.download=%s" % options.download)
+            raise Exception(f"internal error: bad option.download={options.download}")
 
     if no_search_results > 0:
         fatal_error("Some subtitles were not found.")
