@@ -1,13 +1,12 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from agent.tools import (
     WORKSPACE_DIR,
-    download_subtitle_with_subdl,
-    extract_and_copy_subtitle,
+    copy_to_media_library,
+    download_and_extract,
     get_movie_details,
+    search_subdl,
     search_tmdb,
 )
 
@@ -36,93 +35,50 @@ def test_get_movie_details(mock_get: MagicMock):
     assert res["title"] == "Test"
 
 
-@patch("agent.tools.requests.get")
 @patch("cli.subdl_cli.search_subtitles")
 @patch.dict("os.environ", {"SUBDL_API_KEY": "fake_key"})
-def test_download_subtitle_with_subdl(
-    mock_search: MagicMock, mock_get: MagicMock, tmp_path: Path
-):
+def test_search_subdl(mock_search: MagicMock):
+    mock_search.return_value = {
+        "status": True,
+        "subtitles": [
+            {
+                "release_name": "Test Sub",
+                "url": "/dummy.zip",
+                "season": 1,
+                "episode": 1,
+            }
+        ],
+    }
+
+    res = search_subdl("EN", imdb_id="tt123")
+    assert len(res) == 1
+    assert res[0]["url"] == "/dummy.zip"
+
+
+@patch("agent.tools.requests.get")
+def test_download_and_extract(mock_get: MagicMock, tmp_path: Path):
     import shutil
 
     if WORKSPACE_DIR.exists():
         shutil.rmtree(WORKSPACE_DIR)
-
-    WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
-
-    mock_search.return_value = {
-        "status": True,
-        "subtitles": [{"url": "/dummy_sub.zip"}],
-    }
 
     mock_response = MagicMock()
     mock_response.content = b"fakezipdata"
     mock_get.return_value = mock_response
 
-    res = download_subtitle_with_subdl("test.mkv", "tt123", "eng")
-    assert res.endswith("test.zip")
-    assert Path(res).exists()
-
-    # Test failure mode
-    mock_search.return_value = {"status": False}
-    with pytest.raises(FileNotFoundError):
-        download_subtitle_with_subdl("fail.mkv", "tt123", "eng")
-
-
-@patch("cli.subdl_cli.search_subtitles")
-@patch.dict("os.environ", {"SUBDL_API_KEY": "fake_key"})
-def test_download_subtitle_with_subdl_missing_file(
-    mock_search: MagicMock, tmp_path: Path
-):
-    import shutil
-
-    if WORKSPACE_DIR.exists():
-        shutil.rmtree(WORKSPACE_DIR)
-
-    WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
-    mock_search.return_value = {"status": False}
-    with pytest.raises(FileNotFoundError):
-        download_subtitle_with_subdl("missing.mkv", "tt123", "eng")
+    res = download_and_extract("/dummy.zip")
+    assert len(res) == 1
+    assert "download.zip" in res[0]
 
 
 @patch("agent.tools.safe_copy")
-@patch("agent.tools.zipfile.ZipFile")
-def test_extract_and_copy_subtitle_flat(
-    mock_zip: MagicMock, mock_copy: MagicMock, tmp_path: Path
-):
+def test_copy_to_media_library(mock_copy: MagicMock, tmp_path: Path):
     WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Test flat srt
     srt_path = WORKSPACE_DIR / "test_copy.srt"
     srt_path.touch()
 
     video_path = tmp_path / "video.mkv"
     video_path.touch()
 
-    res = extract_and_copy_subtitle(str(srt_path), str(video_path), str(tmp_path))
+    res = copy_to_media_library(str(srt_path), str(video_path), str(tmp_path))
     assert res == str(tmp_path / "video.srt")
-
-
-@patch("agent.tools.safe_copy")
-@patch("agent.tools.zipfile.ZipFile")
-def test_extract_and_copy_subtitle_zip(
-    mock_zip: MagicMock, mock_copy: MagicMock, tmp_path: Path
-):
-    WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Test zip
-    zip_path = WORKSPACE_DIR / "test_copy.zip"
-    zip_path.touch()
-
-    # we need to simulate extraction since it uses extractall and checks filesystem
-    def side_effect(extract_dir: Path):
-        (Path(extract_dir) / "sub.srt").touch()
-
-    mock_instance = MagicMock()
-    mock_instance.extractall.side_effect = side_effect
-    mock_zip.return_value.__enter__.return_value = mock_instance
-
-    video_path = tmp_path / "video_zip.mkv"
-    video_path.touch()
-
-    res = extract_and_copy_subtitle(str(zip_path), str(video_path), str(tmp_path))
-    assert res == str(tmp_path / "video_zip.srt")

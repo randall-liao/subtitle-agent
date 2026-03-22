@@ -57,21 +57,29 @@ def main():
         temperature=0.0,
     )
 
-    for video in videos_missing_subs:
-        logger.info(f"Processing: {video.name}")
+    batch_size = 5
+    for i in range(0, len(videos_missing_subs), batch_size):
+        batch = videos_missing_subs[i : i + batch_size]
+        video_list_str = "\n".join([f"- {v.absolute()}" for v in batch])
+        logger.info(f"Processing batch of {len(batch)} videos.")
+
         chat = client.chats.create(model=args.model, config=config)
         prompt = (
-            f"Please find and download the best subtitle for the video file: {video.name}\n"
+            f"Please process the following {len(batch)} video files and find/download/copy subtitles for them in this session:\n"
+            f"{video_list_str}\n\n"
             f"The target language requested by the user is: {args.language}\n"
-            f"The original video is located at: {video.absolute()}\n"
             f"The safe base directory is: {root_dir}"
         )
+
         try:
-            # For google-genai, providing `tools` in the Chat config automatically manages tool calls!
             response = chat.send_message(prompt)
-            logger.debug(f"Agent finished processing {video.name}.")
+            logger.debug("Agent finished processing batch.")
             logger.trace(f"Agent response: {response.text}")
-            # Verify if subtitle was added
+        except Exception as e:
+            logger.error(f"Error processing batch: {e}")
+
+        # Verify if subtitle was added for each video in batch
+        for video in batch:
             found = False
             for ext in [".srt", ".ass", ".ssa", ".vtt"]:
                 if (video.parent / f"{video.stem}{ext}").exists():
@@ -86,10 +94,6 @@ def main():
                 logger.warning(
                     f"No subtitle found for {video.name} after agent execution."
                 )
-
-        except Exception as e:
-            logger.error(f"Error processing {video.name}: {e}")
-            failure_count += 1
 
     logger.info("Summary Report")
     logger.info(f"Total videos scanned: {total_videos}")

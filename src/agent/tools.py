@@ -59,120 +59,150 @@ def get_movie_details(tmdb_id: str) -> dict[str, str | int | float | list[str]]:
     }
 
 
-def download_subtitle_with_subdl(
-    video_file_name: str, language: str, imdb_id: str | None = None
-) -> str:
-    """Download a subtitle for a given video using SubDL into the workspace.
+def search_subdl(
+    language: str,
+    imdb_id: str | None = None,
+    film_name: str | None = None,
+    season_number: int | None = None,
+    episode_number: int | None = None,
+    type: str | None = None,
+    year: int | None = None,
+) -> list[dict]:
+    """Search for subtitles on SubDL using explicit metadata.
 
     Args:
-        video_file_name: The name of the original video file (e.g., 'Movie.2023.mkv').
-        imdb_id: The IMDB ID string (e.g., 'tt1234567'), optional.
         language: The 2-letter language code (e.g., 'EN') or comma-separated list like 'EN,FA'.
+        imdb_id: The IMDB ID string (e.g., 'tt1234567'), optional.
+        film_name: Name of the film/show to search for.
+        season_number: Season number for TV shows.
+        episode_number: Episode number for TV shows.
+        type: 'movie' or 'tv'.
+        year: Release year.
 
     Returns:
-        The path to the downloaded file (.srt, .ass, or .zip) in the workspace.
+        List of subtitles objects (top 5 max). Each object contains 'release_name', 'url', 'season', 'episode'.
     """
-    from cli.subdl_cli import LINK_PREFIX, search_subtitles
+    from cli.subdl_cli import search_subtitles
 
-    WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
     api_key = os.environ.get("SUBDL_API_KEY")
     if not api_key:
         raise RuntimeError("SUBDL_API_KEY environment variable is required.")
 
-    # Call the new search_subtitles method
     kwargs = {
         "api_key": api_key,
         "languages": language,
         "subs_per_page": 5,
+        "imdb_id": imdb_id,
+        "film_name": film_name,
+        "season_number": season_number,
+        "episode_number": episode_number,
+        "type": type,
+        "year": year,
     }
-    if imdb_id:
-        kwargs["imdb_id"] = imdb_id
-    else:
-        # If no imdb_id, let's just supply the file_name
-        kwargs["file_name"] = video_file_name
+    kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
     logging.info(f"Searching subdl with kwargs: {kwargs}")
     result = search_subtitles(**kwargs)
 
     if not result.get("status") or not result.get("subtitles"):
-        raise FileNotFoundError("Subtitle was not found by subdl_cli.")
+        return []
 
-    # Get the top subtitle result
     subtitle_list = result.get("subtitles")
-    if not isinstance(subtitle_list, list) or not subtitle_list:
-        raise FileNotFoundError("No subtitles found in result.")
+    if not isinstance(subtitle_list, list):
+        return []
 
-    subtitle = subtitle_list[0]
-    download_url = subtitle.get("url")
-    if not download_url:
-        raise FileNotFoundError("Subtitle result missing download URL.")
+    return [
+        {
+            "release_name": sub.get("release_name", ""),
+            "url": sub.get("url", ""),
+            "season": sub.get("season"),
+            "episode": sub.get("episode"),
+            "author": sub.get("author", ""),
+        }
+        for sub in subtitle_list[:5]
+    ]
 
-    full_url = LINK_PREFIX + download_url
+
+def download_and_extract(url: str) -> list[str]:
+    """Download a subtitle zip or file from a SubDL URL and extract it to a temporary workspace.
+
+    Args:
+        url: The exact SubDL URL string returned from `search_subdl` (e.g., '/subtitle/1234-5678.zip').
+
+    Returns:
+        A list of absolute paths to all extracted subtitle files (.srt, .ass, etc.) inside the workspace.
+        You MUST review this list to find the best matching file.
+    """
+    import time
+
+    from cli.subdl_cli import LINK_PREFIX
+
+    WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
+
+    full_url = LINK_PREFIX + url if url.startswith("/") else url
     logging.info(f"Downloading subtitle from {full_url}")
 
-    # Download it into WORKSPACE_DIR
-    # Wait, sometimes it might be .srt or .rar. Subdl usually serves ZIP.
-    # We will just write it to a zip file in the workspace
-    dummy_video_path = WORKSPACE_DIR / video_file_name
-    dummy_video_path.touch(exist_ok=True)
-
-    stem = dummy_video_path.stem
-    zip_path = WORKSPACE_DIR / f"{stem}.zip"
+    prefix = str(int(time.time() * 1000))
+    zip_path = WORKSPACE_DIR / f"{prefix}_download.zip"
 
     response = requests.get(full_url)
     response.raise_for_status()
     with open(zip_path, "wb") as f:
         f.write(response.content)
 
-    return str(zip_path)
+    extracted_files = []
+
+    if zip_path.suffix.lower() == ".zip" or zip_path.suffix.lower() == ".rar":
+        # Note: simplistic extraction assuming zip-like signature for this agent demo
+        # SubDL largely returns Zips.
+        try:
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
+                extract_dir = WORKSPACE_DIR / f"{prefix}_extracted"
+                extract_dir.mkdir(exist_ok=True)
+                zip_ref.extractall(extract_dir)
+                for file in extract_dir.rglob("*"):
+                    if file.is_file() and file.suffix.lower() in {
+                        ".srt",
+                        ".ass",
+                        ".ssa",
+                        ".vtt",
+                    }:
+                        extracted_files.append(str(file.absolute()))
+        except zipfile.BadZipFile:
+            # Maybe it wasn't a zip after all
+            extracted_files.append(str(zip_path.absolute()))
+    else:
+        extracted_files.append(str(zip_path.absolute()))
+
+    return extracted_files
 
 
-def extract_and_copy_subtitle(
-    downloaded_path: str, original_video_path: str, safe_base_dir: str
+def copy_to_media_library(
+    extracted_subtitle_path: str, original_video_path: str, safe_base_dir: str
 ) -> str:
-    """Extract (if zipped) a subtitle, rename to match the video, and safely copy it.
+    """Safely copy the EXACT chosen extracted subtitle file to the user's media library.
+    It will be automatically renamed to match the original video.
 
     Args:
-        downloaded_path: The path to the downloaded subtitle.
+        extracted_subtitle_path: The exact path you selected from the `download_and_extract` tool's output.
         original_video_path: The absolute path of the original video file.
         safe_base_dir: The allowed root directory for the media library.
 
     Returns:
         The path to the newly copied subtitle file.
     """
-    downloaded = Path(downloaded_path)
+    import shutil
+
+    downloaded = Path(extracted_subtitle_path)
     video = Path(original_video_path)
 
     if not downloaded.exists():
-        raise FileNotFoundError(f"Downloaded file {downloaded} does not exist.")
+        raise FileNotFoundError(f"Selected file {downloaded} does not exist.")
 
-    extracted_file_path = downloaded
-    if downloaded.suffix.lower() == ".zip":
-        with zipfile.ZipFile(downloaded, "r") as zip_ref:
-            extract_dir = WORKSPACE_DIR / f"{video.stem}_extracted"
-            extract_dir.mkdir(exist_ok=True)
-            zip_ref.extractall(extract_dir)
-            for file in extract_dir.rglob("*"):
-                if file.is_file() and file.suffix.lower() in {
-                    ".srt",
-                    ".ass",
-                    ".ssa",
-                    ".vtt",
-                }:
-                    extracted_file_path = file
-                    break
-            else:
-                raise FileNotFoundError(
-                    "Could not find a subtitle file in ZIP archive."
-                )
-
-    final_subtitle_name = f"{video.stem}{extracted_file_path.suffix}"
+    final_subtitle_name = f"{video.stem}{downloaded.suffix}"
     final_temp_path = WORKSPACE_DIR / final_subtitle_name
 
-    # Using safe_copy explicitly from temp to target
-    import shutil
-
-    shutil.copy2(extracted_file_path, final_temp_path)
+    shutil.copy2(downloaded, final_temp_path)
 
     target_path = video.parent / final_subtitle_name
     safe_copy(final_temp_path, target_path, safe_base_dir)

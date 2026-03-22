@@ -21,7 +21,7 @@ def test_initialize_agent_missing_key():
 
 def test_get_agent_tools():
     tools = get_agent_tools()
-    assert len(tools) == 4
+    assert len(tools) == 5
 
 
 def test_system_prompt():
