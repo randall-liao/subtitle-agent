@@ -1,0 +1,9 @@
+# LLM Instructions for Nixpacks
+
+## Context
+Subtitle Agent is designed to be executed locally on a user's machine (Windows/Mac/Linux) to scan local media directories. It is NOT typically deployed as a containerized web service.
+
+## Rules
+- Do NOT generate `nixpacks.toml` configuration files.
+- We rely strictly on `uv` for cross-platform package and virtual environment management.
+- Do not containerize the CLI into a Dockerfile unless creating a test environment that mounts local volumes.
