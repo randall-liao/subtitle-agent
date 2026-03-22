@@ -38,4 +38,4 @@ Downloading unknown archives from the internet introduces security risks.
 The `src/main.py` entrypoint is an `argparse` wrapper that sets the initial configuration:
 - `--language` is a required string. It is dynamically interpolated into the LLM's system prompt so the agent strictly searches for that linguistic flag in SubDL.
 - `--model` allows the user to hot-swap Gemini versions (defaulting to the fast `gemini-3.1-flash-lite-preview`).
-- **Batched reporting**: At the end of every batch processing step, `main.py` generates colorful, actionable reports via `loguru` to convey progress.
+- **Session reporting**: At the end of the autonomous execution session, `main.py` generates colorful, actionable reports via `loguru` to convey progress.
