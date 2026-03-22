@@ -5,8 +5,7 @@ The Subtitle Agent CLI is a set of independent Python scripts designed for media
 ## Components
 
 ### 1. `subdl_cli.py`
-Connects to OpenSubtitles.org via XML-RPC and REST APIs to:
-- Hash video files.
+Connects to SubDL via REST API to:
 - Search for subtitles.
 - Download and filter subtitle content.
 

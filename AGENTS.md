@@ -24,6 +24,8 @@ Welcome! This repository follows an **agent-native** development model. Your pri
 2. **Strict Typing**: All code must pass `pyright` in strict mode. Use comprehensive type hints.
 3. **Format & Lint**: Ensure all code passes `uv run ruff check .` and `uv run ruff format .`.
 4. **Test Everything**: All new logic must be accompanied by tests.
+5. **DO NOT MODIFY CLI TOOLS**: The files in `src/cli/` (`subdl_cli.py` and `tmdb_cli.py`) are external/upstream code. They **MUST NOT** be modified, and they are intentionally excluded from all testing and coverage requirements.
+6. **Pass All Checks**: If any code changes occur, the agent MUST run and pass all checks (`ruff`, `pyright`, `pytest`) before concluding the task.
 
 ## 🚀 Common Commands
 
