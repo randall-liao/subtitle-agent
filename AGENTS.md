@@ -1,36 +1,25 @@
-# AI Agent Instructions (AGENTS.md)
+# AI Agent Instructions (Table of Contents)
 
-Welcome! This repository follows an **agent-native** development model. Your primary goal is to help maintain and extend this repository efficiently while adhering to our strict conventions.
+Welcome! This repository follows an **agent-native** development model. You must read and follow the documentation in `docs/`. This file is just a map. 
 
-## 🛠 Core Tech Stack
-
-- **Python**: `python >= 3.14`
-- **Package Manager**: `uv` (Use `uv add`, `uv run`, `uv sync`)
-- **CLI Tools**: Focus on `src/cli/subdl_cli.py` and `src/cli/tmdb_cli.py`.
-- **Typing & Validation**: `pydantic`
-- **Linter & Formatter**: `ruff`
-- **Type Checker**: `pyright` (Strict mode)
-- **Testing**: `pytest`
-
-## 📁 Repository Structure
-
-- `src/cli/` - CLI application code.
-- `tests/` - Unit and integration tests.
-- `docs/` - Project documentation.
+## System of Record (`docs/`)
+- [Core Beliefs](docs/design-docs/core-beliefs.md) - Our "golden principles" and agent-first mindset.
+- [Architecture & Boundaries](ARCHITECTURE.md) - Strict domain boundaries and package layering.
+- [Quality Grades](docs/QUALITY_SCORE.md) - The current technical debt and quality report card.
+- [Execution Plans](docs/exec-plans/) - Where we store our tactical roadmaps.
 
 ## ✅ Agent Rules & Conventions
 
-1. **Use `uv` strictly**: Never use `pip` natively. Use `uv run <command>`, `uv add <package>`, or `uv add --dev <package>`.
-2. **Strict Typing**: All code must pass `pyright` in strict mode. Use comprehensive type hints.
-3. **Format & Lint**: Ensure all code passes `uv run ruff check .` and `uv run ruff format .`.
-4. **Test Everything**: All new logic must be accompanied by tests.
-5. **DO NOT MODIFY CLI TOOLS**: The files in `src/cli/` (`subdl_cli.py` and `tmdb_cli.py`) are external/upstream code. They **MUST NOT** be modified, and they are intentionally excluded from all testing and coverage requirements.
-6. **Pass All Checks**: If any code changes occur, the agent MUST run and pass all checks (`ruff`, `pyright`, `pytest`) before concluding the task.
+1. **Use `uv` strictly**: Use `uv run <command>`, `uv add <package>`, or `uv add --dev <package>`.
+2. **DO NOT MODIFY CLI TOOLS**: The files in `src/cli/` (`subdl_cli.py` and `tmdb_cli.py`) are external/upstream code. They **MUST NOT** be modified, and they are intentionally excluded from all testing.
 
 ## 🚀 Common Commands
 
-*   **Install/Sync dependencies**: `uv sync`
-*   **Run Linter**: `uv run ruff check . --fix`
-*   **Run Formatter**: `uv run ruff format .`
-*   **Run Typechecker**: `uv run pyright`
-*   **Run Tests**: `uv run pytest`
+- **Dependencies**: `uv sync`
+- **Lint**: `uv run ruff check . --fix`, `uv run ruff format .`
+- **Typecheck**: `uv run pyright`
+- **Test**: `uv run pytest`
+
+If you are modifying our documentation or architecture, ensure you run the custom linters:
+- `uv run python scripts/lint_docs.py`
+- `uv run python scripts/lint_architecture.py`

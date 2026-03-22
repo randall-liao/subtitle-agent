@@ -1,0 +1,11 @@
+# LLM Instructions for UV Package Manager
+
+## Context
+Subtitle Agent uses Astral's `uv` instead of native `pip` or `poetry`.
+
+## Rules for AI Execution
+- **Syncing Environments**: Always use `uv sync`. Never use `pip install -r requirements.txt`.
+- **Running Scripts**: Always prefix python files with `uv run`, e.g., `uv run src/main.py`.
+- **Adding Dependencies**: Standard dependencies must be added using `uv add <package_name>`. Development dependencies must use `uv add --dev <package_name>`.
+- **Testing**: Run pytest using `uv run pytest`.
+- **Linting**: Run `uv run ruff check . --fix` and `uv run ruff format .`

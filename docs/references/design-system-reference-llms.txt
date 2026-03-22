@@ -1,0 +1,11 @@
+# LLM Instructions for Design Systems
+
+## Context
+Subtitle Agent is a **headless Python CLI utility**.
+
+## Rules for AI Generating Interface Code
+- Do not generate HTML, CSS, or React components.
+- Do not introduce web frameworks (FastAPI, Flask) unless explicitly requested during an executing plan.
+- All CLI output should be routed through `loguru.logger` using semantic levels (`logger.info`, `logger.success`, `logger.error`, `logger.warning`). 
+- **NEVER** use standard `print()` statements for user-facing output.
+- Structure error messages cleanly so end-users reading standard output can intuitively debug API token issues without reading Python tracebacks.
