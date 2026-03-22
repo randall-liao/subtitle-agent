@@ -36,6 +36,7 @@ Whether you're looking for a simple tool to fix your movie folder or an elegant,
 *   🌍 **Universal Language Support:** Say "French" or "Spanish" in the command line, and the agent automatically maps it to API-compliant language flags for global subtitle search.
 *   🛠️ **Safe & Secure Execution:** Designed with security in mind. It extracts archives into a temporary workspace and mathematically guarantees that files are only moved into safe, authorized directories.
 *   🎬 **Deep Metadata Integration:** Directly interfaces with TMDB and SubDL to verify movies and TV shows, ensuring you get the *exact* subtitle for your specific media version.
+*   🏗️ **Agent-First Architecture:** Built using OpenAI's Codex principles. Uses strict dependency layering, system-of-record documentation, and mechanical "doc-gardening" linters to permanently prevent AI architectural slop.
 *   ⚙️ **Highly Customizable:** Bring your own Gemini model (defaults to lightweight, fast models) and configure custom behaviors directly via CLI flags.
 
 ## 🚀 Quick Start (For Everyone)
@@ -89,6 +90,11 @@ If you are a developer, you can quickly spin up the environment:
 2. Install dependencies using `uv`:
    ```bash
    uv sync
+   ```
+3. Run the custom mechanical enforcement linters (to ensure agentic constraints):
+   ```bash
+   uv run python scripts/lint_docs.py
+   uv run python scripts/lint_architecture.py
    ```
 
 ---
