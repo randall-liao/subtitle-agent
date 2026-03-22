@@ -17,24 +17,25 @@ When the user points the agent at a root media folder, we don't just process eve
 - A recursive `find_videos_missing_subtitles()` generator streams through the target directory. It checks whether an adjacent subtitle file already exists, skipping files that are already satisfied.
 - The state of discovery is strictly tied to the filesystem. There are no relational databases.
 
-### 2. Prompt Logic & Agentic Search (`agent.prompt_logic`)
-Instead of regex-based scrapers (which frequently fail on mislabeled scene releases), we pass the raw video filename to the Gemini model.
-- The `SYSTEM_PROMPT` enforces a strict sequence: Parse the filename -> Search TMDB for the correct IMDB ID -> Search SubDL using that IMDB ID -> Download the Zip archive -> Extract the final subtitle.
+### 2. Prompt Logic & Batched Intelligent Search (`agent.prompt_logic`)
+Instead of regex-based scrapers (which frequently fail on mislabeled scene releases), we pass a **batch of up to 5 video filenames** to the Gemini model in a single prompt.
+- **Batching Strategy**: This reduces Gemini API request counts and avoids `429 RESOURCE_EXHAUSTED` errors.
+- **Semantic Reasoning**: The `SYSTEM_PROMPT` instructs the agent to process the entire batch. For each video, it performs semantic parsing to deduce Season, Episode, and Title, then iteratively calls its atomic tools.
 - This creates semantic flexibility. A file named `s_show.1x03.720p.mkv` will correctly be interpreted as Season 1, Episode 3 by the model.
 
 ### 3. Deep Metadata Integration (TMDB + SubDL)
 Rather than writing our own scrapers, we leverage tested upstream CLI libraries under `src/cli/`.
 - **TMDB Tool (`search_tmdb`, `get_movie_details`)**: We provide the LLM a tool to query the TMDB API. If the model is uncertain about a TV show's exact ID, it searches TMDB first to lock in the official IMDB ID.
-- **SubDL Tool (`download_subtitle_with_subdl`)**: With the confirmed IMDB ID and the user's requested language, the model calls the SubDL API to download the `.zip` archive holding the raw subtitles.
+- **Atomic SubDL Tool (`search_subdl`)**: The LLM calls the SubDL API with its parsed metadata (Season, Episode, Year). This returns a JSON array of potential subtitle matches. The LLM uses its reasoning to pick the best match (e.g., matching release groups or special editions).
 
-### 4. Workspace Isolation & Safe Extraction
-Downloading unknown `.zip` archives from the internet introduces severe security risks.
+### 4. Workspace Isolation & Intelligent Extraction
+Downloading unknown archives from the internet introduces security risks.
 - **Ephemeral Workspaces**: We download all files to an isolated `/tmp/subtitle_agent_workspace/` directory to prevent zip-bomb / directory-traversal pollution in the user's primary media folder.
-- **Deterministic Validation**: The LLM calls `extract_and_copy_subtitle()`. This function parses the `.zip` using Python's standard library. It then extracts only files matching `.srt` or `.ass`.
-- **Safe Payload Delivery (`core.security`)**: The `safe_copy` module enforces `pathlib.resolve(strict=True)` boundaries. It guarantees that the final moving of the `.srt` file into the user's media library is mathematically confined to the intended target directory, shutting down any `../../` traversal attempts.
+- **Intelligent Filename Matching (`download_and_extract`)**: This tool downloads and unpacks the chosen URL. Crucially, it returns a list of *all* extracted filenames to the LLM. The LLM then uses its full contextual intelligence to select the specific `.srt` that matches the current video (essential for season packs).
+- **Safe Payload Delivery (`copy_to_media_library`)**: The LLM provides the specific extracted path. The system then renames and moves it safely. This module enforces `pathlib.resolve(strict=True)` boundaries to guarantee moves are mathematically confined to the intended target directory.
 
 ### 5. Configurable Execution (CLI)
 The `src/main.py` entrypoint is an `argparse` wrapper that sets the initial configuration:
 - `--language` is a required string. It is dynamically interpolated into the LLM's system prompt so the agent strictly searches for that linguistic flag in SubDL.
 - `--model` allows the user to hot-swap Gemini versions (defaulting to the fast `gemini-3.1-flash-lite-preview`).
-- Standard, colorful, actionable outputs are generated for the end-user via the `loguru` library to convey progress without exposing python tracebacks or complex json tool calls.
+- **Batched reporting**: At the end of every batch processing step, `main.py` generates colorful, actionable reports via `loguru` to convey progress.

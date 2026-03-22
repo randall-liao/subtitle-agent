@@ -22,3 +22,4 @@ These boundaries are mechanically enforced by `scripts/lint_architecture.py`.
 - **TMDB API**: `src/cli/tmdb_cli.py`
 - **File Discovery**: `src/core/discovery.py`
 - **Security Check**: `src/core/security.py`
+- **Intelligent Retrieval**: `src/agent/tools.py` (Atomic: `search_subdl`, `download_and_extract`, `copy_to_media_library`)
