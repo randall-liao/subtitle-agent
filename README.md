@@ -10,7 +10,7 @@ Subtitle Agent takes the hassle out of managing your media library by using adva
 
 **For Developers:** Under the hood, this is a tool-calling AI agent. The core loop discovers video files without matching subtitle extensions (`.srt`, `.ass`, etc.). It then constructs a prompt for a Gemini model, providing tools to query the TMDB API for metadata and the SubDL API to download subtitle archives. The agent autonomously decides which tools to call, processes the results, extracts the subtitles from ZIP files, and safely moves them into your library using deterministic Python fallback functions to prevent arbitrary code execution or unsafe file paths.
 
-### �️ Architecture Overview
+### 🏗️ Architecture Overview
 
 ```mermaid
 graph TD
@@ -38,7 +38,7 @@ Whether you're looking for a simple tool to fix your movie folder or an elegant,
 *   🎬 **Deep Metadata Integration:** Directly interfaces with TMDB and SubDL to verify movies and TV shows, ensuring you get the *exact* subtitle for your specific media version.
 *   ⚙️ **Highly Customizable:** Bring your own Gemini model (defaults to lightweight, fast models) and configure custom behaviors directly via CLI flags.
 
-## �🚀 Usage
+## 🚀 Usage
 
 Run the Subtitle Agent by pointing it to a directory containing your video files. The agent will automatically scan for videos missing subtitles and download the best matches.
 
@@ -74,7 +74,7 @@ To use the Subtitle Agent, you need to set up the following API keys in your env
 - **Python**: `>= 3.14`
 - **Package Manager**: [uv](https://github.com/astral-sh/uv)
 
-## 🛠 Installation
+## 🛠️ Installation
 
 1. Clone the repository:
    ```bash
