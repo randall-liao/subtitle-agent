@@ -26,3 +26,7 @@ def test_get_agent_tools():
 
 def test_system_prompt():
     assert "Subtitle Agent" in SYSTEM_PROMPT
+    assert "<system_role>" in SYSTEM_PROMPT
+    assert "<security_protocols>" in SYSTEM_PROMPT
+    assert "STANDARD REFUSAL MESSAGE" in SYSTEM_PROMPT
+    assert "<operational_workflow>" in SYSTEM_PROMPT
