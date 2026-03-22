@@ -38,19 +38,60 @@ Whether you're looking for a simple tool to fix your movie folder or an elegant,
 *   🎬 **Deep Metadata Integration:** Directly interfaces with TMDB and SubDL to verify movies and TV shows, ensuring you get the *exact* subtitle for your specific media version.
 *   ⚙️ **Highly Customizable:** Bring your own Gemini model (defaults to lightweight, fast models) and configure custom behaviors directly via CLI flags.
 
-## 🚀 Usage
+## 🚀 Quick Start (For Everyone)
 
-Run the Subtitle Agent by pointing it to a directory containing your video files. The agent will automatically scan for videos missing subtitles and download the best matches.
+Don't want to deal with complex developer environments? Follow these simple steps:
 
-```bash
-uv run src/main.py --language "English" /path/to/your/media/folder
-```
+1. **Get the Prerequisites:**
+   - Install **Python** (version 3.14 or newer) from [python.org](https://www.python.org/downloads/).
+   - Install **uv** (a fast Python package manager). Open your terminal/command prompt and run:
+     - **Windows:** `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+     - **Mac/Linux:** `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
-### Options
+2. **Download the Agent:**
+   - Download this project as a ZIP file (click the green "**Code**" button at the top of this page, then "**Download ZIP**") and extract it to a folder on your computer.
+   - *Alternatively, you can use `git clone https://github.com/randall-liao/subtitle-agent.git` if you have Git installed.*
 
+3. **Set Up Your API Keys:**
+   - Open the extracted folder.
+   - Create a new text file and name it exactly `.env` (make sure your computer doesn't name it `.env.txt`).
+   - Open it in Notepad or any text editor and paste your API keys like this:
+     ```env
+     GEMINI_API_KEY=your_gemini_key_here
+     SUBDL_API_KEY=your_subdl_key_here
+     TMDB_API_KEY=your_tmdb_key_here
+     ```
+   - *(See the **API Keys Setup** section below for how to get these free keys)*.
+
+4. **Run the Agent:**
+   - Open your terminal or command prompt **inside the extracted folder**.
+   - Run the following command, replacing the path with the folder where your movies/shows are:
+     ```bash
+     uv run src/main.py --language "English" "C:\Path\To\Your\Media\Folder"
+     ```
+
+### ⚙️ Command Line Options
 - `folder`: Directory to scan for missing subtitles.
-- `--language`: (Required) Natural language for the subtitles (e.g., English, French, Spanish). The agent automatically converts this to the appropriate API flag.
-- `--model`: Optionally specify the Gemini model to use (defaults to `gemini-3.1-flash-lite-preview`).
+- `--language`: (Required) Natural language for the subtitles (e.g., "English", "French", "Spanish"). 
+- `--model`: Optionally specify a different Gemini model (defaults to `gemini-3.1-flash-lite-preview`).
+
+---
+
+## 💻 Advanced Setup (For Developers)
+
+If you are a developer, you can quickly spin up the environment:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/randall-liao/subtitle-agent.git
+   cd subtitle-agent
+   ```
+2. Install dependencies using `uv`:
+   ```bash
+   uv sync
+   ```
+
+---
 
 ## 🔑 API Keys Setup
 
@@ -68,24 +109,6 @@ To use the Subtitle Agent, you need to set up the following API keys in your env
    - Go to [themoviedb.org](https://www.themoviedb.org/) and create an account.
    - Go to your Account Settings > API.
    - Request a "Developer" API key and fill in the required details. Once approved, copy the API Key (v3 auth).
-
-## 📋 Prerequisites
-
-- **Python**: `>= 3.14`
-- **Package Manager**: [uv](https://github.com/astral-sh/uv)
-
-## 🛠️ Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/randall-liao/subtitle-agent.git
-   cd subtitle-agent
-   ```
-
-2. Install dependencies using `uv`:
-   ```bash
-   uv sync
-   ```
 
 ## 📄 License
 
