@@ -1,19 +1,20 @@
 #! python3
-# Credit: @GitHub: illegalbyte `https://github.com/illegalbyte/TMDB_CLI/tree/main`
+# Credit: @GitHub: illegalbyte [https://github.com/illegalbyte/TMDB_CLI/tree/main]
 
 import argparse
 import json
 import os
 import time
+import sys
 from pathlib import Path
-from pprint import pprint
+from loguru import logger
 
-import pyinputplus as pyip
+import pyinputplus as pyip  # type: ignore
 import requests
 from colorama import Fore, Style
 from pygments import highlight
 from pygments.formatters.terminal256 import Terminal256Formatter
-from pygments.lexers.web import JsonLexer
+from pygments.lexers.web import JsonLexer  # type: ignore
 from pygments.styles import get_style_by_name
 
 # TMDB IDs: [tv, movie] (for testing purposes)
@@ -70,7 +71,7 @@ GREEN = Fore.GREEN
 
 
 # For taking filepaths as input and validating them
-def dir_path(string):
+def dir_path(string: str) -> str:
     if os.path.isfile(string):
         return string
     else:
@@ -78,97 +79,102 @@ def dir_path(string):
 
 
 # for printing readable JSON (coloured)
-def prettyJson(json_string):
-    json_string = json.loads(json_string)
-    formatted_json = json.dumps(json_string, indent=4)
-    if args.colour:
+def prettyJson(json_string: str, use_colour: bool = False) -> str:
+    json_data = json.loads(json_string)
+    formatted_json = json.dumps(json_data, indent=4)
+    if use_colour:
         colorful_json = highlight(
             formatted_json,
             JsonLexer(),
             Terminal256Formatter(style=get_style_by_name("monokai")),
         )
-        return colorful_json
+        return str(colorful_json)
     else:
         return str(formatted_json)
 
 
-# Take the user arguments and flags
-parser = argparse.ArgumentParser()
-exclusiveArgs = (
-    parser.add_mutually_exclusive_group()
-)  # makes sure users don't pass -tv and -m for example
-listInputArgs = parser.add_argument_group()
-justwatchArgs = parser.add_argument_group()
-parser.add_argument(
-    "-j", "--json", help="return raw JSON output from the API", action="store_true"
-)
-parser.add_argument(
-    "-k", "--key", help="authenticate with your API key", action="store_true"
-)
-exclusiveArgs.add_argument(
-    "-m",
-    "--movie",
-    help="search for movie using themoviedb.org ID",
-    type=str,
-    metavar="<TMDB_ID>",
-)
-exclusiveArgs.add_argument(
-    "-tv",
-    "--television",
-    help="search for TV show using themoviedb.org ID",
-    type=str,
-    metavar="<TMDB_ID>",
-)
-listInputArgs.add_argument(
-    "-l",
-    "--list",
-    help="use a list of line separated ID values as input (pass -c for JSON syntax highlighting and formatted output)",
-    action="store_true",
-)
-listInputArgs.add_argument(
-    "-c",
-    "--colour",
-    help="Colourful JSON output (don't use if output is being sent to a file)",
-    action="store_true",
-)
-parser.add_argument(
-    "-imdb",
-    "--imdbid",
-    help="pass an IMDB ID instead of a themoviedb.org ID",
-    action="store_true",
-)
-exclusiveArgs.add_argument(
-    "-idconvert",
-    "--imdbidconvert",
-    help="returns a TMDB ID when passed an IMDB ID",
-    type=str,
-    metavar="<IMDB_ID>",
-)
-justwatchArgs.add_argument(
-    "-mw",
-    "--moviewatch",
-    help="Find which streaming platforms a movie is available (specify country using -loc)",
-    type=str,
-    metavar="<TMDB_ID>",
-)
-justwatchArgs.add_argument(
-    "-tvw",
-    "--tvwatch",
-    help="Find which streaming platforms a TV show is available (specify country using -loc)",
-    type=str,
-    metavar="<TMDB_ID>",
-)
-justwatchArgs.add_argument(
-    "-loc",
-    "--locale",
-    help="Specify which country's streaming services you want to search (default: 'Australia')",
-    metavar="<COUNTRY>",
-)
-args = parser.parse_args()
+if __name__ == "__main__":
+
+    class Args:
+        colour = False
+
+    args = Args()
+    parser = argparse.ArgumentParser()
+    exclusiveArgs = (
+        parser.add_mutually_exclusive_group()
+    )  # makes sure users don't pass -tv and -m for example
+    listInputArgs = parser.add_argument_group()
+    justwatchArgs = parser.add_argument_group()
+    parser.add_argument(
+        "-j", "--json", help="return raw JSON output from the API", action="store_true"
+    )
+    parser.add_argument(
+        "-k", "--key", help="authenticate with your API key", action="store_true"
+    )
+    exclusiveArgs.add_argument(
+        "-m",
+        "--movie",
+        help="search for movie using themoviedb.org ID",
+        type=str,
+        metavar="<TMDB_ID>",
+    )
+    exclusiveArgs.add_argument(
+        "-tv",
+        "--television",
+        help="search for TV show using themoviedb.org ID",
+        type=str,
+        metavar="<TMDB_ID>",
+    )
+    listInputArgs.add_argument(
+        "-l",
+        "--list",
+        help="use a list of line separated ID values as input (pass -c for JSON syntax highlighting and formatted output)",
+        action="store_true",
+    )
+    listInputArgs.add_argument(
+        "-c",
+        "--colour",
+        help="Colourful JSON output (don't use if output is being sent to a file)",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-imdb",
+        "--imdbid",
+        help="pass an IMDB ID instead of a themoviedb.org ID",
+        action="store_true",
+    )
+    exclusiveArgs.add_argument(
+        "-idconvert",
+        "--imdbidconvert",
+        help="returns a TMDB ID when passed an IMDB ID",
+        type=str,
+        metavar="<IMDB_ID>",
+    )
+    justwatchArgs.add_argument(
+        "-mw",
+        "--moviewatch",
+        help="Find which streaming platforms a movie is available (specify country using -loc)",
+        type=str,
+        metavar="<TMDB_ID>",
+    )
+    justwatchArgs.add_argument(
+        "-tvw",
+        "--tvwatch",
+        help="Find which streaming platforms a TV show is available (specify country using -loc)",
+        type=str,
+        metavar="<TMDB_ID>",
+    )
+    justwatchArgs.add_argument(
+        "-loc",
+        "--locale",
+        help="Specify which country's streaming services you want to search (default: 'Australia')",
+        metavar="<COUNTRY>",
+    )
+    args = parser.parse_args()
 
 
 # Reads each line of file and returns a list
-def read_file_lines(filePath):
+def read_file_lines(filePath: str) -> list[str]:
     # Make sure the file exists
     dir_path(filePath)
 
@@ -181,7 +187,9 @@ def read_file_lines(filePath):
 # TMDB class containing API interactions
 class TMDB:
     # Ask for API KEY
-    def InitialiseKey():
+    # Ask for API KEY
+    @staticmethod
+    def InitialiseKey() -> None:
         while True:
             apiKeyInput = pyip.inputStr(
                 "Enter your API key from themoviedb.org:n",
@@ -192,7 +200,7 @@ class TMDB:
                 ).status_code
                 == requests.codes.ok
             ):
-                print(
+                logger.success(
                     "Awesome, your key worked and has been saved. Run 'tmdb -h' if you need help getting started."
                 )
                 break
@@ -201,8 +209,9 @@ class TMDB:
             initFile.write(f"API_KEY='{apiKeyInput}'")
 
     # Get Movie Details
-    def Movie(TMDB_ID: str, j=False) -> dict:
-        url = f"https://api.themoviedb.org/3/movie/{TMDB_ID}?api_key={API_KEY}&language=en-US"
+    @staticmethod
+    def Movie(TMDB_ID: str, api_key: str, j: bool = False) -> dict | str:  # type: ignore
+        url = f"https://api.themoviedb.org/3/movie/{TMDB_ID}?api_key={api_key}&language=en-US"
         response = requests.get(url)
         response.raise_for_status()
         # Return JSON if JSON parameter is passed
@@ -245,8 +254,9 @@ class TMDB:
         return returnDict
 
     # Returns a python dict of TV details, TODO: allow multiple arguments and return all output.
-    def TV(TMDB_ID: str, j=False) -> dict:
-        url = f"https://api.themoviedb.org/3/tv/{TMDB_ID}?api_key={API_KEY}&language=en-US"
+    @staticmethod
+    def TV(TMDB_ID: str, api_key: str, j: bool = False) -> dict | str:  # type: ignore
+        url = f"https://api.themoviedb.org/3/tv/{TMDB_ID}?api_key={api_key}&language=en-US"
         response = requests.get(url)
         response.raise_for_status()
         # Return JSON if JSON parameter is passed
@@ -282,15 +292,17 @@ class TMDB:
         return returnDict
 
     # Converts an IMDB ID to a TMDB ID, TODO: automatically convert IMDB IDs to TMDB
-    def IMDB_CONVERTER(IMDB_ID) -> str:
-        url = f"https://api.themoviedb.org/3/find/{IMDB_ID}?api_key={API_KEY}&language=en-US&external_source=imdb_id"
+    @staticmethod
+    def IMDB_CONVERTER(IMDB_ID: str, api_key: str) -> str | None:
+        url = f"https://api.themoviedb.org/3/find/{IMDB_ID}?api_key={api_key}&language=en-US&external_source=imdb_id"
         response = requests.get(url)
         response.raise_for_status()
         findResponseDictionary = json.loads(response.text)
         if findResponseDictionary["movie_results"] != []:
-            return findResponseDictionary["movie_results"][0]["id"]
+            return str(findResponseDictionary["movie_results"][0]["id"])
         elif findResponseDictionary["tv_results"] != []:
-            return findResponseDictionary["tv_results"][0]["id"]
+            return str(findResponseDictionary["tv_results"][0]["id"])
+        return None
 
     # TODO: Add search for movies / TV shows in an interactive menu using pyinputplus menus
 
@@ -298,89 +310,129 @@ class TMDB:
     # localised to region
     # eg translate country name to country code
 
-    def justwatch(TMDB_ID: str, movie=False, tv=False, country="AU") -> dict:
+    @staticmethod
+    def justwatch(
+        TMDB_ID: str,
+        api_key: str,
+        movie: bool = False,
+        tv: bool = False,
+        country: str = "AU",
+    ) -> None:
         if movie:
-            url = f"https://api.themoviedb.org/3/movie/{TMDB_ID}/watch/providers?api_key={API_KEY}"
+            url = f"https://api.themoviedb.org/3/movie/{TMDB_ID}/watch/providers?api_key={api_key}"
             response = requests.get(url)
             response.raise_for_status()
             providers_dict = json.loads(response.text)
-            pprint(providers_dict)
+            logger.info(providers_dict)
         elif tv:
-            url = f"https://api.themoviedb.org/3/tv/{TMDB_ID}/watch/providers?api_key={API_KEY}"
+            url = f"https://api.themoviedb.org/3/tv/{TMDB_ID}/watch/providers?api_key={api_key}"
             response = requests.get(url)
             response.raise_for_status()
             providers_dict = json.loads(response.text)
-            pprint(providers_dict)
+            logger.info(providers_dict)
 
 
 if __name__ == "__main__":
     # Initialise API KEY: run when 'key' is passed or there is no init file found
-    if (args.key) or not Path.exists(Path("./init.py")):
+    if (args.key) or not os.path.exists("./init.py"):
         TMDB.InitialiseKey()
-    else:
-        from init import API_KEY
+
+    # Try to get API_KEY
+    current_api_key = os.environ.get("TMDB_API_KEY")
+    if not current_api_key:
+        try:
+            from init import API_KEY  # type: ignore
+
+            current_api_key = API_KEY
+        except ImportError:
+            current_api_key = ""
+
+    if not current_api_key and not args.key:
+        logger.error("No API key found. Use -k to set it.")
+        sys.exit(1)
 
     # MOVIE OUTPUT [Args: -m / --movie]
     if args.movie is not None:
         if args.imdbid:
-            args.movie = TMDB.IMDB_CONVERTER(args.movie)
+            args.movie = TMDB.IMDB_CONVERTER(args.movie, current_api_key)
         if args.list:
             id_list = read_file_lines(args.movie)
-            for id in id_list:
-                print(prettyJson(TMDB.movie(id, j=True)))
+            for movie_id in id_list:
+                movie_info = TMDB.Movie(movie_id, current_api_key, j=True)
+                if isinstance(movie_info, str):
+                    logger.info(prettyJson(movie_info, use_colour=args.colour))
                 time.sleep(REQUEST_RATE_LIMIT_SECONDS)
-        if args.json:
-            print(prettyJson(TMDB.Movie(args.movie, j=True)))
+        elif args.json:
+            movie_info = TMDB.Movie(args.movie, current_api_key, j=True)
+            if isinstance(movie_info, str):
+                logger.info(prettyJson(movie_info, use_colour=args.colour))
         else:
             # convert IMDB ID to TMDB ID if IMDB ID is given
-            movieDict = TMDB.Movie(args.movie)
-            print(
-                f"{GREEN}TITLE:{RS}{YELLOW} {movieDict['title']} {RS}	{movieDict['runtime']} mins"
-            )
-            print(f"{GREEN}GENRES:{RS} {movieDict['genres']}")
-            print(
-                f"{GREEN}RATING:{RS} {movieDict['rating']}/10 		{GREEN}RELEASED:{RS} {movieDict['release_date']}"
-            )
-            print(f"{GREEN}DESCRIPTION:{RS} {movieDict['description']}")
-            print(
-                f"{GREEN}Spoken Language(s):{RS} {' | '.join(movieDict['languages'])}"
-            )
+            movie_data = TMDB.Movie(args.movie, current_api_key)
+            if isinstance(movie_data, dict):
+                logger.info(
+                    f"{GREEN}TITLE:{RS}{YELLOW} {movie_data['title']} {RS}	{movie_data['runtime']} mins"
+                )
+                logger.info(f"{GREEN}GENRES:{RS} {movie_data['genres']}")
+                logger.info(
+                    f"{GREEN}RATING:{RS} {movie_data['rating']}/10 		{GREEN}RELEASED:{RS} {movie_data['release_date']}"
+                )
+                logger.info(f"{GREEN}DESCRIPTION:{RS} {movie_data['description']}")
+                logger.info(
+                    f"{GREEN}Spoken Language(s):{RS} {' | '.join(movie_data['languages'])}"
+                )
 
-            # appends link to trailer if available.
-            if movieDict["trailer"]:
-                print(f"{GREEN}TRAILER:{RS} {movieDict['trailer']}")
+                # appends link to trailer if available.
+                if movie_data["trailer"]:
+                    logger.info(f"{GREEN}TRAILER:{RS} {movie_data['trailer']}")
 
     # TV OUTPUT [Args: -tv / --television]
     if args.television is not None:
         if args.imdbid:
-            args.television = TMDB.IMDB_CONVERTER(args.television)
+            args.television = TMDB.IMDB_CONVERTER(args.television, current_api_key)
 
         if args.list:
             # reads each line of file and stores it in id_list
             id_list = read_file_lines(args.television)
             # for each line return the pretty json version of the file
-            for id in id_list:
-                print(prettyJson(TMDB.TV(id, j=True)))
+            for tv_id in id_list:
+                tv_info = TMDB.TV(tv_id, current_api_key, j=True)
+                if isinstance(tv_info, str):
+                    logger.info(prettyJson(tv_info, use_colour=args.colour))
                 time.sleep(REQUEST_RATE_LIMIT_SECONDS)
-        if args.json and not args.list:
-            print(prettyJson(TMDB.TV(args.television, j=True)))
+        elif args.json:
+            tv_info = TMDB.TV(args.television, current_api_key, j=True)
+            if isinstance(tv_info, str):
+                logger.info(prettyJson(tv_info, use_colour=args.colour))
         else:
-            tvDict = TMDB.TV(args.television)
-            print(f"{GREEN}TITLE: {RS}{YELLOW} {tvDict['title']} {RS}")
-            print(f"{GREEN}GENRES: {RS} {tvDict['genres']}")
-            print(
-                f"{GREEN}EPISODE LENGTH: {RS} {tvDict['runtime']}mins	{GREEN}SEASONS: {RS} {tvDict['seasons']}"
-            )
-            print(
-                f"{GREEN}RATING: {RS} {tvDict['rating']}/10 		{GREEN}RELEASED: {RS} {str(tvDict['release_date'])[2:-2]}"
-            )
-            print(f"{GREEN}DESCRIPTION:{RS} {tvDict['description']}")
-            print(f"{GREEN}Spoken Language(s):{RS} {' | '.join(tvDict['languages'])}")
+            tv_data = TMDB.TV(args.television, current_api_key)
+            if isinstance(tv_data, dict):
+                logger.info(f"{GREEN}TITLE: {RS}{YELLOW} {tv_data['title']} {RS}")
+                logger.info(f"{GREEN}GENRES: {RS} {tv_data['genres']}")
+                logger.info(
+                    f"{GREEN}EPISODE LENGTH: {RS} {tv_data['runtime']}mins	{GREEN}SEASONS: {RS} {tv_data['seasons']}"
+                )
+                logger.info(
+                    f"{GREEN}RATING: {RS} {tv_data['rating']}/10 		{GREEN}RELEASED: {RS} {str(tv_data['release_date'])[2:-2]}"
+                )
+                logger.info(f"{GREEN}DESCRIPTION:{RS} {tv_data['description']}")
+                logger.info(
+                    f"{GREEN}Spoken Language(s):{RS} {' | '.join(tv_data['languages'])}"
+                )
 
     # CONVERTS IMDB ID TO TMDB ID [-idconvert / --imdbidconvert]
     if args.imdbidconvert is not None:
-        print(TMDB.IMDB_CONVERTER(args.imdbidconvert))
+        imdb_tmdb_id = TMDB.IMDB_CONVERTER(args.imdbidconvert, current_api_key)
+        if imdb_tmdb_id:
+            logger.info(imdb_tmdb_id)
 
     # GETS THE AVAILABLE STREAMING SERVICES FOR A SPECIFIED COUNTRY:
     if args.tvwatch or args.moviewatch:
-        TMDB.justwatch(args.moviewatch, movie=True)
+        watch_id = args.moviewatch or args.tvwatch
+        if watch_id:
+            TMDB.justwatch(
+                watch_id,
+                current_api_key,
+                movie=bool(args.moviewatch),
+                tv=bool(args.tvwatch),
+            )
