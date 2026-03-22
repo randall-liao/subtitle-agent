@@ -116,6 +116,16 @@ To use the Subtitle Agent, you need to set up the following API keys in your env
    - Go to your Account Settings > API.
    - Request a "Developer" API key and fill in the required details. Once approved, copy the API Key (v3 auth).
 
+## 🤖 Agent-First Development Approach
+
+This project strictly adheres to the architectural design patterns outlined in OpenAI's [*Harness engineering: leveraging Codex in an agent-first world*](https://openai.com/index/harness-engineering/). 
+
+Rather than relying on human engineers to memorize sprawling guidelines, the Subtitle Agent repository is designed around **architectural legibility** and **mechanical enforcement** for other AI Agents:
+- **System of Record**: The `docs/` folder is the absolute source of truth. There is no external knowledge; if it's not documented in the repository, it does not exist.
+- **Progressive Legibility**: We explicitly avoid 1,000-page monolithic instruction manuals. [`AGENTS.md`](AGENTS.md) is a deeply minimalist mapping document that routes agentic attention to specific design beliefs and execution plans.
+- **Architectural Constraints**: Product domains (`cli`, `agent`, `core`) are rigidly layered. The `scripts/lint_architecture.py` agent mechanically ensures no upstream layers improperly import downstream layers, preventing long-term AI slop.
+- **Garden Linters**: The `scripts/lint_docs.py` agent continuously scans markdown cross-links to prevent documentation rot as the codebase speeds forward.
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](file:///home/devuser/projects/subtitle-agent/LICENSE) file for details.
