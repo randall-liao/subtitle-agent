@@ -57,43 +57,40 @@ def main():
         temperature=0.0,
     )
 
-    batch_size = 5
-    for i in range(0, len(videos_missing_subs), batch_size):
-        batch = videos_missing_subs[i : i + batch_size]
-        video_list_str = "\n".join([f"- {v.absolute()}" for v in batch])
-        logger.info(f"Processing batch of {len(batch)} videos.")
+    video_list_str = "\n".join([f"- {v.absolute()}" for v in videos_missing_subs])
+    logger.info("Initializing autonomous agent execution loop...")
 
-        chat = client.chats.create(model=args.model, config=config)
-        prompt = (
-            f"Please process the following {len(batch)} video files and find/download/copy subtitles for them in this session:\n"
-            f"{video_list_str}\n\n"
-            f"The target language requested by the user is: {args.language}\n"
-            f"The safe base directory is: {root_dir}"
+    chat = client.chats.create(model=args.model, config=config)
+    prompt = (
+        f"Please process the following {len(videos_missing_subs)} video files and find/download/copy subtitles for them in this session:\n"
+        f"{video_list_str}\n\n"
+        f"The target language requested by the user is: {args.language}\n"
+        f"The safe base directory is: {root_dir}"
+    )
+
+    try:
+        response = chat.send_message(prompt)
+        logger.debug(
+            "Agent finished processing all videos in a single autonomous session."
         )
+        logger.trace(f"Agent response: {response.text}")
+    except Exception as e:
+        logger.error(f"Error during autonomous agent execution: {e}")
 
-        try:
-            response = chat.send_message(prompt)
-            logger.debug("Agent finished processing batch.")
-            logger.trace(f"Agent response: {response.text}")
-        except Exception as e:
-            logger.error(f"Error processing batch: {e}")
+    # Verify if subtitle was added for each video
+    for video in videos_missing_subs:
+        found = False
+        for ext in [".srt", ".ass", ".ssa", ".vtt"]:
+            if (video.parent / f"{video.stem}{ext}").exists():
+                found = True
+                break
 
-        # Verify if subtitle was added for each video in batch
-        for video in batch:
-            found = False
-            for ext in [".srt", ".ass", ".ssa", ".vtt"]:
-                if (video.parent / f"{video.stem}{ext}").exists():
-                    found = True
-                    break
-
-            if found:
-                success_count += 1
-                logger.success(f"Subtitle added for {video.name}")
-            else:
-                failure_count += 1
-                logger.warning(
-                    f"No subtitle found for {video.name} after agent execution."
-                )
+        if found:
+            success_count += 1
+            logger.success(f"Subtitle added for {video.name}")
+        else:
+            failure_count += 1
+            logger.warning(f"No subtitle found for {video.name} after agent execution.")
 
     logger.info("Summary Report")
     logger.info(f"Total videos scanned: {total_videos}")

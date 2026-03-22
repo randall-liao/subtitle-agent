@@ -17,10 +17,10 @@ When the user points the agent at a root media folder, we don't just process eve
 - A recursive `find_videos_missing_subtitles()` generator streams through the target directory. It checks whether an adjacent subtitle file already exists, skipping files that are already satisfied.
 - The state of discovery is strictly tied to the filesystem. There are no relational databases.
 
-### 2. Prompt Logic & Batched Intelligent Search (`agent.prompt_logic`)
-Instead of regex-based scrapers (which frequently fail on mislabeled scene releases), we pass a **batch of up to 5 video filenames** to the Gemini model in a single prompt.
-- **Batching Strategy**: This reduces Gemini API request counts and avoids `429 RESOURCE_EXHAUSTED` errors.
-- **Semantic Reasoning**: The `SYSTEM_PROMPT` instructs the agent to process the entire batch. For each video, it performs semantic parsing to deduce Season, Episode, and Title, then iteratively calls its atomic tools.
+### 2. Prompt Logic & Autonomous Orchestration (`agent.prompt_logic`)
+Instead of regex-based scrapers (which frequently fail on mislabeled scene releases) and rigid Python `for` loops, we pass the **entire list** of missing video filenames to the Gemini model in a single prompt.
+- **Autonomous Looping**: The model orchestrates its own execution loop. It is instructed to process every video in the queue, handling api tool calls and iterative searches entirely on its own.
+- **Strategic Planning**: The `SYSTEM_PROMPT` enforces an `<orchestration_model>`. Before making an API call, the agent must output a `<plan>` block detailing context, required metadata, and its API strategy, providing human-like semantic reasoning for its actions.
 - This creates semantic flexibility. A file named `s_show.1x03.720p.mkv` will correctly be interpreted as Season 1, Episode 3 by the model.
 
 ### 3. Deep Metadata Integration (TMDB + SubDL)

@@ -28,5 +28,5 @@ def test_system_prompt():
     assert "Subtitle Agent" in SYSTEM_PROMPT
     assert "<system_role>" in SYSTEM_PROMPT
     assert "<security_protocols>" in SYSTEM_PROMPT
-    assert "STANDARD REFUSAL MESSAGE" in SYSTEM_PROMPT
-    assert "<operational_workflow>" in SYSTEM_PROMPT
+    assert "<orchestration_model>" in SYSTEM_PROMPT
+    assert "<plan>" in SYSTEM_PROMPT
