@@ -68,8 +68,9 @@ def main():
         )
         try:
             # For google-genai, providing `tools` in the Chat config automatically manages tool calls!
-            chat.send_message(prompt)
+            response = chat.send_message(prompt)
             logger.debug(f"Agent finished processing {video.name}.")
+            logger.trace(f"Agent response: {response.text}")
             # Verify if subtitle was added
             found = False
             for ext in [".srt", ".ass", ".ssa", ".vtt"]:

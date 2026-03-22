@@ -2,7 +2,43 @@
 
 An AI agent that automatically finds, downloads, and organizes subtitles for your media collection using SubDL and TMDB.
 
-## 🚀 Usage
+## 🧠 How It Works
+
+Subtitle Agent takes the hassle out of managing your media library by using advanced AI (Google's Gemini) to automatically find the perfect subtitles for your videos. 
+
+**For Non-Developers:** You just point the agent to your folder full of movies or TV shows, and it does the rest. It looks at the file names, understands what show or movie it is, searches the internet for the right subtitle in your preferred language, and places it neatly next to your video file.
+
+**For Developers:** Under the hood, this is a tool-calling AI agent. The core loop discovers video files without matching subtitle extensions (`.srt`, `.ass`, etc.). It then constructs a prompt for a Gemini model, providing tools to query the TMDB API for metadata and the SubDL API to download subtitle archives. The agent autonomously decides which tools to call, processes the results, extracts the subtitles from ZIP files, and safely moves them into your library using deterministic Python fallback functions to prevent arbitrary code execution or unsafe file paths.
+
+### �️ Architecture Overview
+
+```mermaid
+graph TD
+    A[User's Media Folder] -->|Scan for missing subtitles| B(Core Discovery Engine)
+    B -->|Found videos without subs| C{AI Subtitle Agent}
+    C -->|Extract Metadata| D[File Name Parser]
+    C <-->|Query TMDB ID/IMDB ID| E[TMDB API]
+    C <-->|Search & Download Sub| F[SubDL API]
+    F -->|Raw Subtitle File / ZIP| G(Workspace & Extractor)
+    G -->|Extract & Validate .srt/.ass| H[Safe Copy Module]
+    H -->|Match video name| I[User's Media Folder]
+    
+    classDef ai fill:#e1bee7,stroke:#8e24aa,stroke-width:2px;
+    class C ai;
+```
+
+## ✨ Features
+
+Whether you're looking for a simple tool to fix your movie folder or an elegant, AI-driven automation script, Subtitle Agent has you covered.
+
+*   🎯 **Zero-Hassle Automatic Discovery:** Just point to a folder. It recursively scans and identifies exactly which `.mp4`, `.mkv`, or `.avi` files are missing their `.srt` or `.ass` companions. 
+*   🤖 **True Agentic Search (AI-Powered):** Instead of using fragile regex or hardcoded scrapers, it uses the reasoning capabilities of Large Language Models to handle messy, inconsistently named downloaded media files.
+*   🌍 **Universal Language Support:** Say "French" or "Spanish" in the command line, and the agent automatically maps it to API-compliant language flags for global subtitle search.
+*   🛠️ **Safe & Secure Execution:** Designed with security in mind. It extracts archives into a temporary workspace and mathematically guarantees that files are only moved into safe, authorized directories.
+*   🎬 **Deep Metadata Integration:** Directly interfaces with TMDB and SubDL to verify movies and TV shows, ensuring you get the *exact* subtitle for your specific media version.
+*   ⚙️ **Highly Customizable:** Bring your own Gemini model (defaults to lightweight, fast models) and configure custom behaviors directly via CLI flags.
+
+## �🚀 Usage
 
 Run the Subtitle Agent by pointing it to a directory containing your video files. The agent will automatically scan for videos missing subtitles and download the best matches.
 
@@ -33,21 +69,6 @@ To use the Subtitle Agent, you need to set up the following API keys in your env
    - Go to your Account Settings > API.
    - Request a "Developer" API key and fill in the required details. Once approved, copy the API Key (v3 auth).
 
-## 🚀 Overview
-
-Subtitle Agent uses Google's Gemini models to intelligently analyze your media library and find the best matching subtitles:
-- **Automatic Discovery**: Scans directories for video files missing subtitles.
-- **Agentic Search**: Uses LLM capabilities to search and select the best subtitles.
-
-> **Note**: The CLI files in `src/cli/` are considered external/upstream code. They are not to be modified and are excluded from testing and coverage calculations.
-
-## ✨ Features
-
-- **SubDL Integration**: Search subtitles by IMDB ID, or search string.
-- **TMDB Search**: Quickly find movie metadata and IMDB IDs.
-- **Support for Many Languages**: Search in multiple languages simultaneously.
-- **Customizable Output**: Format downloaded subtitle filenames to match your preferences.
-
 ## 📋 Prerequisites
 
 - **Python**: `>= 3.14`
@@ -75,3 +96,5 @@ This project is licensed under the MIT License - see the [LICENSE](file:///home/
 Special thanks to the authors of the CLI tools used in this project:
 - **SubDL CLI**: [@kalmnoise](https://github.com/kalmnoise/subdl_api_cli)
 - **TMDB CLI**: [@illegalbyte](https://github.com/illegalbyte/TMDB_CLI)
+
+> **Note**: The CLI files in `src/cli/` are considered external/upstream code. They are not to be modified and are excluded from testing and coverage calculations.
