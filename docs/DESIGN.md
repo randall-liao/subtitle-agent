@@ -25,8 +25,8 @@ Instead of regex-based scrapers (which frequently fail on mislabeled scene relea
 
 ### 3. Deep Metadata Integration (TMDB + SubDL)
 Rather than writing our own scrapers, we leverage tested upstream CLI libraries under `src/cli/`.
-- **TMDB Tool (`search_tmdb`, `get_movie_details`)**: We provide the LLM a tool to query the TMDB API. If the model is uncertain about a TV show's exact ID, it searches TMDB first to lock in the official IMDB ID.
-- **Atomic SubDL Tool (`search_subdl`)**: The LLM calls the SubDL API with its parsed metadata (Season, Episode, Year). This returns a JSON array of potential subtitle matches. The LLM uses its reasoning to pick the best match (e.g., matching release groups or special editions).
+- **TMDB Tool (`search_tmdb`, `get_movie_details`)**: We provide the LLM a tool to query the TMDB API. **Strict TMDB-First Requirement**: The LLM is heavily instructed to *always* query TMDB first to lock in an official IMDB/TMDB ID because SubDL's fuzzy text search is notoriously unreliable.
+- **Atomic SubDL Tool (`search_subdl`)**: The LLM calls the SubDL API with its confirmed metadata (`tmdb_id` or `imdb_id`, Season, Episode, Year). This returns a JSON array of potential subtitle matches. The LLM uses its reasoning to pick the best match (e.g., matching release groups or special editions).
 
 ### 4. Workspace Isolation & Intelligent Extraction
 Downloading unknown archives from the internet introduces security risks.

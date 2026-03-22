@@ -62,6 +62,7 @@ def get_movie_details(tmdb_id: str) -> dict[str, str | int | float | list[str]]:
 def search_subdl(
     language: str,
     imdb_id: str | None = None,
+    tmdb_id: str | int | None = None,
     film_name: str | None = None,
     season_number: int | None = None,
     episode_number: int | None = None,
@@ -73,6 +74,7 @@ def search_subdl(
     Args:
         language: The 2-letter language code (e.g., 'EN') or comma-separated list like 'EN,FA'.
         imdb_id: The IMDB ID string (e.g., 'tt1234567'), optional.
+        tmdb_id: The TMDB ID string or int, optional.
         film_name: Name of the film/show to search for.
         season_number: Season number for TV shows.
         episode_number: Episode number for TV shows.
@@ -93,12 +95,14 @@ def search_subdl(
         "languages": language,
         "subs_per_page": 5,
         "imdb_id": imdb_id,
+        "tmdb_id": tmdb_id,
         "film_name": film_name,
         "season_number": season_number,
         "episode_number": episode_number,
         "type": type,
         "year": year,
     }
+
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
 
     logging.info(f"Searching subdl with kwargs: {kwargs}")

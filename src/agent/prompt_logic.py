@@ -30,8 +30,8 @@ You must act like a human intelligent agent:
    - What API calls you think are necessary (e.g., "I will query TMDB first to get the official IMDB ID, then use that ID for SubDL").
    - If a previous search failed, detail your modified strategy (e.g., "SubDL didn't find the IMDB ID. I will search SubDL by the raw film_name instead").
 2. **API MEMORY**: 
-   - `search_tmdb` and `get_movie_details` are used to find an IMDB ID (`tt...`). 
-   - `search_subdl` works best with an `imdb_id`, but if that fails, you can fall back to using just `film_name`, `season_number`, and `episode_number`.
+   - **STRICT HIERARCHY**: SubDL's text search is highly unreliable. You MUST use `search_tmdb` first to obtain an accurate `id` (which acts as a TMDB ID) or `get_movie_details` to get an `imdb_id`. 
+   - `search_subdl` MUST be called with either `imdb_id` or `tmdb_id` derived from the metadata lookup step. Only fall back to querying solely by `film_name` if the TMDB ID lookups definitively fail.
    - `download_and_extract` returns a list of files that were inside a zip/archive.
    - `copy_to_media_library` takes the EXACT file path from the extracted list and safely places it next to the specified video.
 3. **SELF-DIRECTED ITERATION**: It is your responsibility to finish processing ALL the inputs. Iterate through each file provided in `<untrusted_user_input>`. If a file fails and you've exhausted reasonable search fallbacks (like name-only searches), explicitly log it in a `<thought>` block and move to the next file.
