@@ -15,3 +15,8 @@ To prevent destructive overwriting of user-owned files, `safe_copy` maintains a 
 
 ## 3. Tool Execution Boundaries
 The agent is granted a constrained list of Python tools (`extract_and_copy_subtitle`, `download_subtitle_with_subdl`, `search_tmdb`, `get_movie_details`). Arbitrary shell execution (`subprocess.run`, `os.system`) is explicitly disabled and prohibited in the system prompt.
+## 4. Branch Protection & PR Workflow
+To maintain repository integrity and prevent unauthorized or accidental changes to the production logic, direct pushes to the `main` branch are strictly prohibited. 
+- **Mandatory Pull Requests**: All changes must be submitted via a feature branch and a Pull Request. 
+- **Code Review**: Pull Requests must be reviewed and approved before merging. 
+- **Mechanical Enforcement**: GitHub Branch Protection rules should be enabled to block all direct pushes and require status checks to pass before merging.

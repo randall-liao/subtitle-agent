@@ -14,6 +14,7 @@ Welcome! This repository follows an **agent-native** development model. You must
 2. **DO NOT MODIFY CLI TOOLS**: The files in `src/cli/` (`subdl_cli.py` and `tmdb_cli.py`) are external/upstream code. They **MUST NOT** be modified, and they are intentionally excluded from all testing.
 3. **Reason, Don't Guess**: We no longer use rigid Python regex to match subtitles. Use the `download_and_extract` tool to inspect ZIP contents and use your internal reasoning to pick the best file.
 4. **Autonomous Orchestration**: You will receive the entire queue of missing subtitles at once. You must plan your approach and manage your own loop to process every file sequentially before finishing the turn.
+5. **Feature Branch & PR Workflow**: You are strictly forbidden from pushing code directly to the `main` branch. You must always create a feature branch and a Pull Request for any changes.
 
 ## 🚀 Common Commands
 
