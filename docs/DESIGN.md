@@ -17,10 +17,10 @@ When the user points the agent at a root media folder, we don't just process eve
 - A recursive `find_videos_missing_subtitles()` generator streams through the target directory. It checks whether an adjacent subtitle file already exists, skipping files that are already satisfied.
 - The state of discovery is strictly tied to the filesystem. There are no relational databases.
 
-### 2. Prompt Logic & Autonomous Orchestration (`agent.prompt_logic`)
-Instead of regex-based scrapers (which frequently fail on mislabeled scene releases) and rigid Python `for` loops, we pass the **entire list** of missing video filenames to the Gemini model in a single prompt.
-- **Autonomous Looping**: The model orchestrates its own execution loop. It is instructed to process every video in the queue, handling api tool calls and iterative searches entirely on its own.
-- **Strategic Planning**: The `SYSTEM_PROMPT` enforces an `<orchestration_model>`. Before making an API call, the agent must output a `<plan>` block detailing context, required metadata, and its API strategy, providing human-like semantic reasoning for its actions.
+### 2. ADK Agent Definition & Native Tool Calling (`agent.prompt_logic`)
+Instead of regex-based scrapers (which frequently fail on mislabeled scene releases) and rigid Python `for` loops, we define a declarative `Agent` using [Google ADK](https://github.com/google/adk-python) and pass the **entire list** of missing video filenames in a single prompt.
+- **ADK-Native Orchestration**: The `Agent` is configured with `name`, `model`, `instruction`, and `tools`. ADK's `InMemoryRunner` handles the tool-calling loop — the LLM autonomously decides which tools to call and in what order.
+- **Simplified Instruction**: Instead of rigid XML blocks (`<plan>`, `<orchestration_model>`), the instruction simply describes the available tools and the agent's purpose. The LLM's native reasoning handles strategic planning.
 - This creates semantic flexibility. A file named `s_show.1x03.720p.mkv` will correctly be interpreted as Season 1, Episode 3 by the model.
 
 ### 3. Deep Metadata Integration (TMDB + SubDL)
@@ -37,5 +37,5 @@ Downloading unknown archives from the internet introduces security risks.
 ### 5. Configurable Execution (CLI)
 The `src/main.py` entrypoint is an `argparse` wrapper that sets the initial configuration:
 - `--language` is a required string. It is dynamically interpolated into the LLM's system prompt so the agent strictly searches for that linguistic flag in SubDL.
-- `--model` allows the user to hot-swap Gemini versions (defaulting to the fast `gemini-3.1-flash-lite-preview`).
+- `--model` allows the user to hot-swap Gemini versions (defaulting to `gemini-2.5-flash`).
 - **Session reporting**: At the end of the autonomous execution session, `main.py` generates colorful, actionable reports via `loguru` to convey progress.

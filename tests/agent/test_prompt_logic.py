@@ -1,32 +1,24 @@
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
-
-from agent.prompt_logic import SYSTEM_PROMPT, get_agent_tools, initialize_agent
+from agent.prompt_logic import INSTRUCTION, get_root_agent
 
 
-@patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
-@patch("agent.prompt_logic.genai.Client")
-def test_initialize_agent(mock_client: MagicMock):
-    initialize_agent()
-    mock_client.assert_called_with(api_key="test_key")
+def test_get_root_agent_default_model():
+    with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
+        agent = get_root_agent()
+        assert agent.name == "subtitle_agent"
+        assert len(agent.tools) == 5
 
 
-@patch.dict(os.environ, clear=True)
-def test_initialize_agent_missing_key():
-    with pytest.raises(ValueError):
-        initialize_agent()
+def test_get_root_agent_custom_model():
+    with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
+        agent = get_root_agent(model="gemini-2.0-flash")
+        assert agent.name == "subtitle_agent"
 
 
-def test_get_agent_tools():
-    tools = get_agent_tools()
-    assert len(tools) == 5
-
-
-def test_system_prompt():
-    assert "Subtitle Agent" in SYSTEM_PROMPT
-    assert "<system_role>" in SYSTEM_PROMPT
-    assert "<security_protocols>" in SYSTEM_PROMPT
-    assert "<orchestration_model>" in SYSTEM_PROMPT
-    assert "<plan>" in SYSTEM_PROMPT
+def test_instruction_content():
+    assert "Subtitle Agent" in INSTRUCTION
+    assert "TMDB" in INSTRUCTION
+    assert "SubDL" in INSTRUCTION
+    assert "Security rules" in INSTRUCTION

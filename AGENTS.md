@@ -13,7 +13,7 @@ Welcome! This repository follows an **agent-native** development model. You must
 1. **Use `uv` strictly**: Use `uv run <command>`, `uv add <package>`, or `uv add --dev <package>`.
 2. **DO NOT MODIFY CLI TOOLS**: The files in `src/cli/` (`subdl_cli.py` and `tmdb_cli.py`) are external/upstream code. They **MUST NOT** be modified, and they are intentionally excluded from all testing.
 3. **Reason, Don't Guess**: We no longer use rigid Python regex to match subtitles. Use the `download_and_extract` tool to inspect ZIP contents and use your internal reasoning to pick the best file.
-4. **Autonomous Orchestration**: You will receive the entire queue of missing subtitles at once. You must plan your approach and manage your own loop to process every file sequentially before finishing the turn.
+4. **ADK-Powered Agent**: The agent is defined declaratively using the [Google Agent Development Kit (ADK)](https://github.com/google/adk-python). The `Agent` class in `src/agent/prompt_logic.py` defines the agent with its tools. ADK's native tool-calling loop handles orchestration — the LLM autonomously decides which tools to call and in what order.
 5. **Feature Branch & PR Workflow**: You are strictly forbidden from pushing code directly to the `main` branch. You must always create a feature branch and a Pull Request for any changes.
 
 ## 🚀 Common Commands

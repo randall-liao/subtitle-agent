@@ -6,8 +6,8 @@ The Subtitle Agent codebase is heavily structured to allow deterministic agent n
 We enforce forward-only dependencies mechanically. The layers are:
 1. `src/cli/` (External/Upstream)
 2. `src/core/` (Utility/Logic)
-3. `src/agent/` (AI Prompting & Tools)
-4. `src/main.py` (Entrypoint)
+3. `src/agent/` (ADK Agent Definition & Tools)
+4. `src/main.py` (Entrypoint — ADK `InMemoryRunner`)
 
 **Rules:**
 - `src/cli/` has ZERO internal dependencies. It cannot import from `core`, `agent`, or `main`.
@@ -22,4 +22,5 @@ These boundaries are mechanically enforced by `scripts/lint_architecture.py`.
 - **TMDB API**: `src/cli/tmdb_cli.py`
 - **File Discovery**: `src/core/discovery.py`
 - **Security Check**: `src/core/security.py`
-- **Intelligent Retrieval**: `src/agent/tools.py` (Atomic: `search_subdl`, `download_and_extract`, `copy_to_media_library`)
+- **Agent Definition**: `src/agent/prompt_logic.py` (ADK `Agent` with instruction + tools)
+- **Intelligent Retrieval**: `src/agent/tools.py` (Atomic: `search_tmdb`, `get_movie_details`, `search_subdl`, `download_and_extract`, `copy_to_media_library`)

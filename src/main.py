@@ -4,10 +4,11 @@ import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
-from google.genai.types import GenerateContentConfig
+from google.adk.runners import InMemoryRunner
+from google.genai import types
 from loguru import logger
 
-from agent.prompt_logic import SYSTEM_PROMPT, get_agent_tools, initialize_agent
+from agent.prompt_logic import get_root_agent
 from core.discovery import find_videos_missing_subtitles
 
 load_dotenv()
@@ -18,7 +19,7 @@ def main():
     parser.add_argument("folder", help="Directory to scan for missing subtitles")
     parser.add_argument(
         "--model",
-        default=os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite-preview"),
+        default=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
         help="Gemini model to use",
     )
     parser.add_argument(
@@ -36,44 +37,53 @@ def main():
     logger.info(f"Scanning directory: {root_dir}")
     total_videos, videos_missing_subs = find_videos_missing_subtitles(root_dir)
 
-    try:
-        client = initialize_agent()
-    except Exception as e:
-        logger.error(f"Failed to initialize agent: {e}")
-        sys.exit(1)
-
-    tools = get_agent_tools()
-
     logger.info(
         f"Found {total_videos} videos. {len(videos_missing_subs)} missing subtitles."
     )
 
-    success_count = 0
-    failure_count = 0
+    if not videos_missing_subs:
+        logger.info("All videos already have subtitles. Nothing to do.")
+        return
 
-    config = GenerateContentConfig(
-        system_instruction=SYSTEM_PROMPT,
-        tools=tools,
-        temperature=0.0,
-    )
+    # Create the ADK agent and runner
+    try:
+        agent = get_root_agent(model=args.model)
+    except Exception as e:
+        logger.error(f"Failed to initialize agent: {e}")
+        sys.exit(1)
+
+    runner = InMemoryRunner(agent=agent, app_name="subtitle_agent")
 
     video_list_str = "\n".join([f"- {v.absolute()}" for v in videos_missing_subs])
-    logger.info("Initializing autonomous agent execution loop...")
-
-    chat = client.chats.create(model=args.model, config=config)
     prompt = (
-        f"Please process the following {len(videos_missing_subs)} video files and find/download/copy subtitles for them in this session:\n"
+        f"Please process the following {len(videos_missing_subs)} video files "
+        f"and find/download/copy subtitles for them:\n"
         f"{video_list_str}\n\n"
         f"The target language requested by the user is: {args.language}\n"
         f"The safe base directory is: {root_dir}"
     )
 
+    user_message = types.Content(
+        role="user",
+        parts=[types.Part.from_text(text=prompt)],
+    )
+
+    logger.info("Initializing autonomous agent execution loop...")
+
+    success_count = 0
+    failure_count = 0
+
     try:
-        response = chat.send_message(prompt)
-        logger.debug(
-            "Agent finished processing all videos in a single autonomous session."
-        )
-        logger.trace(f"Agent response: {response.text}")
+        for event in runner.run(
+            user_id="cli_user",
+            session_id="session_001",
+            new_message=user_message,
+        ):
+            if event.is_final_response() and event.content and event.content.parts:
+                final_text = "\n".join(p.text for p in event.content.parts if p.text)
+                logger.debug(f"Agent final response:\n{final_text}")
+
+        logger.debug("Agent finished processing all videos.")
     except Exception as e:
         logger.error(f"Error during autonomous agent execution: {e}")
 

@@ -8,4 +8,4 @@ We track the quality of our domains to know where our "AI slop" or technical deb
 | `cli/tmdb_cli.py` | CLI | A | Upstream code, excluded from coverage requirements. |
 | `core/discovery.py` | Core | B+ | Missing broader extension support beyond hardcoded lists. |
 | `core/security.py` | Core | A | High confidence, but OS paths could be tricky on Windows. |
-| `agent/prompt_logic.py` | Agent | B | Instructions are solid, but could use structured outputs instead of raw text checking. |
+| `agent/prompt_logic.py` | Agent | A- | Migrated to ADK declarative `Agent`. Clean instruction, native tool-calling loop. |
