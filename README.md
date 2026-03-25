@@ -8,7 +8,7 @@ Subtitle Agent takes the hassle out of managing your media library by using adva
 
 **For Non-Developers:** You just point the agent to your folder full of movies or TV shows, and it does the rest. It looks at the file names, understands what show or movie it is, searches the internet for the right subtitle in your preferred language, and places it neatly next to your video file.
 
-**For Developers:** Under the hood, this is a tool-calling AI agent. The core loop discovers video files without matching subtitle extensions (`.srt`, `.ass`, etc.). It then constructs a prompt for a Gemini model, providing tools to query the TMDB API for metadata and the SubDL API to download subtitle archives. The agent autonomously decides which tools to call, processes the results, extracts the subtitles from ZIP files, and safely moves them into your library using deterministic Python fallback functions to prevent arbitrary code execution or unsafe file paths.
+**For Developers:** Under the hood, this is a tool-calling AI agent built on [Google's Agent Development Kit (ADK)](https://github.com/google/adk-python). The core loop discovers video files without matching subtitle extensions (`.srt`, `.ass`, etc.). It then constructs a prompt for a Gemini model and passes it through ADK's `InMemoryRunner`, providing tools to query the TMDB API for metadata and the SubDL API to download subtitle archives. ADK's native tool-calling loop handles orchestration — the LLM autonomously decides which tools to call, processes the results, extracts the subtitles from ZIP files, and safely moves them into your library using deterministic Python functions to prevent arbitrary code execution or unsafe file paths.
 
 ### 🏗️ Architecture Overview
 
@@ -36,7 +36,7 @@ Whether you're looking for a simple tool to fix your movie folder or an elegant,
 *   🌍 **Universal Language Support:** Say "French" or "Spanish" in the command line, and the agent automatically maps it to API-compliant language flags for global subtitle search.
 *   🛠️ **Safe & Secure Execution:** Designed with security in mind. It extracts archives into a temporary workspace and mathematically guarantees that files are only moved into safe, authorized directories.
 *   🎬 **Deep Metadata Integration:** Directly interfaces with TMDB and SubDL to verify movies and TV shows, ensuring you get the *exact* subtitle for your specific media version.
-*   🏗️ **Agent-First Architecture:** Built using OpenAI's Codex principles. Uses strict dependency layering, system-of-record documentation, and mechanical "doc-gardening" linters to permanently prevent AI architectural slop.
+*   🏗️ **Agent-First Architecture:** Built on [Google ADK](https://github.com/google/adk-python) with strict dependency layering, system-of-record documentation, and mechanical "doc-gardening" linters to permanently prevent AI architectural slop.
 *   ⚙️ **Highly Customizable:** Bring your own Gemini model (defaults to lightweight, fast models) and configure custom behaviors directly via CLI flags.
 
 ## 🚀 Quick Start (For Everyone)
@@ -74,7 +74,7 @@ Don't want to deal with complex developer environments? Follow these simple step
 ### ⚙️ Command Line Options
 - `folder`: Directory to scan for missing subtitles.
 - `--language`: (Required) Natural language for the subtitles (e.g., "English", "French", "Spanish"). 
-- `--model`: Optionally specify a different Gemini model (defaults to `gemini-3.1-flash-lite-preview`).
+- `--model`: Optionally specify a different Gemini model (defaults to `gemini-2.5-flash`).
 
 ---
 
