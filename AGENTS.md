@@ -5,6 +5,7 @@ Welcome! This repository follows an **agent-native** development model. You must
 ## System of Record (`docs/`)
 - [Core Beliefs](docs/design-docs/core-beliefs.md) - Our "golden principles" and agent-first mindset.
 - [Architecture & Boundaries](ARCHITECTURE.md) - Strict domain boundaries and package layering.
+- [ADK Integration](docs/design-docs/adk-integration.md) - How we use Google ADK for autonomous tool calling.
 - [Quality Grades](docs/QUALITY_SCORE.md) - The current technical debt and quality report card.
 - [Execution Plans](docs/exec-plans/) - Where we store our tactical roadmaps.
 

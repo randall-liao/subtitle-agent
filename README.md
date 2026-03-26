@@ -17,9 +17,9 @@ graph TD
     A[User's Media Folder] -->|Scan for missing subtitles| B(Core Discovery Engine)
     B -->|Found videos without subs| C{AI Subtitle Agent}
     C -->|Extract Metadata| D[File Name Parser]
-    C <-->|Query TMDB ID/IMDB ID| E[TMDB API]
-    C <-->|Search & Download Sub| F[SubDL API]
-    F -->|Raw Subtitle File / ZIP| G(Workspace & Extractor)
+    C <-->|Query TMDB/SubDL| E[ADK Runner]
+    E <-->|Tool Execution| F[SubDL / TMDB APIs]
+    F -->|Raw Subtitle / ZIP| G(Workspace & Extractor)
     G -->|Extract & Validate .srt/.ass| H[Safe Copy Module]
     H -->|Match video name| I[User's Media Folder]
     
